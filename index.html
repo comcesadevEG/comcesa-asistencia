@@ -1,0 +1,2800 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>COMCESA — Control de Asistencia</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600;700&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+
+<style>
+  /* ─── VARIABLES ───────────────────────────────────────── */
+  :root {
+    --navy:       #0d1f3c;
+    --navy-mid:   #162d52;
+    --navy-light: #1e3d6e;
+    --blue:       #1a56db;
+    --blue-light: #3b82f6;
+    --accent:     #00c9a7;
+    --accent2:    #f59e0b;
+    --danger:     #ef4444;
+    --danger-soft:#fef2f2;
+    --success:    #10b981;
+    --success-soft:#f0fdf4;
+    --warn:       #f59e0b;
+    --warn-soft:  #fffbeb;
+    --gray-50:    #f8fafc;
+    --gray-100:   #f1f5f9;
+    --gray-200:   #e2e8f0;
+    --gray-300:   #cbd5e1;
+    --gray-400:   #94a3b8;
+    --gray-500:   #64748b;
+    --gray-600:   #475569;
+    --gray-700:   #334155;
+    --gray-800:   #1e293b;
+    --gray-900:   #0f172a;
+    --white:      #ffffff;
+    --radius:     12px;
+    --radius-lg:  18px;
+    --shadow-sm:  0 1px 3px rgba(0,0,0,.08), 0 1px 2px rgba(0,0,0,.06);
+    --shadow:     0 4px 16px rgba(0,0,0,.10);
+    --shadow-lg:  0 10px 40px rgba(0,0,0,.14);
+    --shadow-xl:  0 20px 60px rgba(0,0,0,.18);
+    --transition: all .22s cubic-bezier(.4,0,.2,1);
+  }
+
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  html { font-size: 16px; -webkit-font-smoothing: antialiased; }
+  body {
+    font-family: 'DM Sans', sans-serif;
+    background: var(--gray-50);
+    color: var(--gray-800);
+    min-height: 100vh;
+  }
+
+  .screen { display: none; min-height: 100vh; }
+  .screen.active { display: flex; }
+
+  /* ─── LOGIN SCREEN ────────────────────────────────────── */
+  #screen-login {
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    background: #e8eeff;
+    padding: 24px;
+    position: relative;
+    overflow: hidden;
+  }
+  #screen-login::before {
+    content: '';
+    position: absolute;
+    width: 650px; height: 650px;
+    border-radius: 50%;
+    background: radial-gradient(circle, rgba(59,103,224,.45) 0%, rgba(99,140,255,.2) 40%, transparent 70%);
+    top: -200px; right: -180px;
+    pointer-events: none;
+    animation: floatA 7s ease-in-out infinite;
+  }
+  #screen-login::after {
+    content: '';
+    position: absolute;
+    width: 550px; height: 550px;
+    border-radius: 50%;
+    background: radial-gradient(circle, rgba(26,86,219,.4) 0%, rgba(80,130,255,.18) 40%, transparent 70%);
+    bottom: -160px; left: -160px;
+    pointer-events: none;
+    animation: floatB 9s ease-in-out infinite;
+  }
+  .login-blob {
+    position: absolute;
+    width: 400px; height: 400px;
+    border-radius: 50%;
+    background: radial-gradient(circle, rgba(100,150,255,.35) 0%, rgba(150,190,255,.15) 40%, transparent 70%);
+    top: 40%; left: 55%;
+    pointer-events: none;
+    animation: floatC 11s ease-in-out infinite;
+  }
+  .login-blob2 {
+    position: absolute;
+    width: 280px; height: 280px;
+    border-radius: 50%;
+    background: radial-gradient(circle, rgba(40,100,210,.3) 0%, rgba(100,160,255,.12) 40%, transparent 70%);
+    top: 10%; left: 15%;
+    pointer-events: none;
+    animation: floatD 8s ease-in-out infinite;
+  }
+  @keyframes floatA {
+    0%,100% { transform: translate(0,0) scale(1); }
+    33%      { transform: translate(-50px, 60px) scale(1.08); }
+    66%      { transform: translate(30px, 20px) scale(.95); }
+  }
+  @keyframes floatB {
+    0%,100% { transform: translate(0,0) scale(1); }
+    33%      { transform: translate(60px,-50px) scale(1.1); }
+    66%      { transform: translate(-20px, 30px) scale(.96); }
+  }
+  @keyframes floatC {
+    0%,100% { transform: translate(0,0) scale(1); }
+    50%      { transform: translate(-40px, -35px) scale(1.06); }
+  }
+  @keyframes floatD {
+    0%,100% { transform: translate(0,0) scale(1); }
+    40%      { transform: translate(35px, 50px) scale(1.12); }
+    80%      { transform: translate(-25px, 15px) scale(.94); }
+  }
+
+  .login-card {
+    background: #ffffff;
+    border: none;
+    border-radius: var(--radius-lg);
+    padding: 48px 40px;
+    width: 100%;
+    max-width: 420px;
+    box-shadow: var(--shadow-xl);
+    position: relative;
+    z-index: 1;
+    animation: fadeUp .5s ease both;
+  }
+  .login-logo {
+    display: flex;
+    justify-content: center;
+    margin-bottom: 32px;
+  }
+  .login-logo img { height: 52px; object-fit: contain; }
+  .login-title {
+    font-size: 1.5rem; font-weight: 700; color: var(--navy);
+    text-align: center; margin-bottom: 4px; letter-spacing: -.3px;
+  }
+  .login-subtitle {
+    font-size: .875rem; color: var(--gray-400);
+    text-align: center; margin-bottom: 32px;
+  }
+
+  .form-group { margin-bottom: 18px; }
+  .form-label {
+    display: block; font-size: .8125rem; font-weight: 600;
+    color: var(--gray-600); margin-bottom: 8px;
+    letter-spacing: .3px; text-transform: uppercase;
+  }
+  .form-label-dark {
+    display: block; font-size: .8125rem; font-weight: 600;
+    color: var(--gray-600); margin-bottom: 8px;
+    letter-spacing: .3px; text-transform: uppercase;
+  }
+  .form-input {
+    width: 100%; padding: 13px 16px; border-radius: var(--radius);
+    border: 1.5px solid var(--gray-200); background: var(--gray-50);
+    color: var(--gray-800); font-family: inherit; font-size: .9375rem;
+    outline: none; transition: var(--transition);
+  }
+  .form-input::placeholder { color: var(--gray-300); }
+  .form-input:focus {
+    border-color: var(--blue); background: var(--white);
+    box-shadow: 0 0 0 3px rgba(26,86,219,.12);
+  }
+  .form-input-light {
+    width: 100%; padding: 13px 16px; border-radius: var(--radius);
+    border: 1.5px solid var(--gray-200); background: var(--white);
+    color: var(--gray-800); font-family: inherit; font-size: .9375rem;
+    outline: none; transition: var(--transition);
+  }
+  .form-input-light:focus {
+    border-color: var(--blue); box-shadow: 0 0 0 3px rgba(26,86,219,.12);
+  }
+
+  .btn {
+    display: inline-flex; align-items: center; justify-content: center;
+    gap: 8px; padding: 13px 24px; border-radius: var(--radius); border: none;
+    font-family: inherit; font-size: .9375rem; font-weight: 600;
+    cursor: pointer; transition: var(--transition); text-decoration: none; white-space: nowrap;
+  }
+  .btn:disabled { opacity: .5; cursor: not-allowed; }
+  .btn-primary {
+    background: var(--blue); color: var(--white); width: 100%;
+    box-shadow: 0 4px 14px rgba(26,86,219,.35);
+  }
+  .btn-primary:hover:not(:disabled) {
+    background: #1648c7; box-shadow: 0 6px 20px rgba(26,86,219,.45); transform: translateY(-1px);
+  }
+  .btn-success { background: var(--success); color: var(--white); box-shadow: 0 4px 14px rgba(16,185,129,.3); }
+  .btn-success:hover:not(:disabled) { background: #059669; transform: translateY(-1px); }
+  .btn-danger { background: var(--danger); color: var(--white); box-shadow: 0 4px 14px rgba(239,68,68,.3); }
+  .btn-danger:hover:not(:disabled) { background: #dc2626; transform: translateY(-1px); }
+  .btn-ghost { background: transparent; color: var(--gray-500); border: 1.5px solid var(--gray-200); }
+  .btn-ghost:hover { background: var(--gray-100); color: var(--gray-700); }
+  .btn-navy { background: var(--navy); color: var(--white); }
+  .btn-navy:hover { background: var(--navy-mid); transform: translateY(-1px); }
+  .btn-sm { padding: 8px 16px; font-size: .8125rem; }
+  .btn-lg { padding: 16px 32px; font-size: 1rem; }
+  .btn-full { width: 100%; }
+
+  /* ─── TOTP SCREENS ────────────────────────────────────── */
+  #screen-totp-setup, #screen-totp-verify {
+    flex-direction: column; align-items: center; justify-content: center;
+    background: #e8eeff; padding: 24px; position: relative; overflow: hidden;
+  }
+  #screen-totp-setup::before, #screen-totp-verify::before {
+    content: ''; position: absolute; width: 650px; height: 650px; border-radius: 50%;
+    background: radial-gradient(circle, rgba(59,103,224,.45) 0%, rgba(99,140,255,.2) 40%, transparent 70%);
+    top: -200px; right: -180px; pointer-events: none; animation: floatA 7s ease-in-out infinite;
+  }
+  #screen-totp-setup::after, #screen-totp-verify::after {
+    content: ''; position: absolute; width: 550px; height: 550px; border-radius: 50%;
+    background: radial-gradient(circle, rgba(26,86,219,.4) 0%, rgba(80,130,255,.18) 40%, transparent 70%);
+    bottom: -160px; left: -160px; pointer-events: none; animation: floatB 9s ease-in-out infinite;
+  }
+  .totp-card {
+    background: var(--white); border-radius: var(--radius-lg); padding: 40px;
+    width: 100%; max-width: 460px; box-shadow: var(--shadow-xl); animation: fadeUp .5s ease both;
+  }
+  .totp-header { text-align: center; margin-bottom: 28px; }
+  .totp-header h2 { font-size: 1.5rem; font-weight: 700; color: var(--gray-900); margin-bottom: 6px; }
+  .totp-header p { color: var(--gray-500); font-size: .9rem; }
+
+  .steps-list {
+    background: var(--gray-50); border-radius: var(--radius);
+    padding: 18px 20px; margin-bottom: 24px;
+  }
+  .step-item {
+    display: flex; align-items: flex-start; gap: 12px;
+    margin-bottom: 12px; font-size: .9rem; color: var(--gray-700);
+  }
+  .step-item:last-child { margin-bottom: 0; }
+  .step-num {
+    min-width: 24px; height: 24px; background: var(--navy); color: var(--white);
+    border-radius: 50%; font-size: .75rem; font-weight: 700;
+    display: flex; align-items: center; justify-content: center; margin-top: 1px;
+  }
+
+  .qr-wrapper {
+    display: flex; justify-content: center; margin: 20px 0; padding: 20px;
+    background: var(--white); border: 2px dashed var(--gray-200); border-radius: var(--radius);
+  }
+  .secret-box { background: var(--gray-900); border-radius: var(--radius); padding: 14px 18px; text-align: center; margin-bottom: 20px; }
+  .secret-label { font-size: .75rem; color: var(--gray-400); margin-bottom: 6px; text-transform: uppercase; letter-spacing: .5px; }
+  .secret-code { font-family: 'DM Mono', monospace; font-size: 1rem; color: var(--accent); letter-spacing: 2px; word-break: break-all; }
+
+  /* ─── EMPLOYEE DASHBOARD ──────────────────────────────── */
+  #screen-employee { flex-direction: column; background: var(--gray-50); min-height: 100vh; }
+  .app-header {
+    background: var(--navy); padding: 0 24px; height: 64px;
+    display: flex; align-items: center; justify-content: space-between;
+    box-shadow: 0 2px 8px rgba(0,0,0,.2); position: sticky; top: 0; z-index: 100;
+  }
+  .app-header-logo img { height: 32px; filter: brightness(0) invert(1); object-fit: contain; }
+  .app-header-right { display: flex; align-items: center; gap: 12px; }
+  .user-badge {
+    display: flex; align-items: center; gap: 10px; background: rgba(255,255,255,.08);
+    padding: 6px 14px 6px 6px; border-radius: 999px; border: 1px solid rgba(255,255,255,.12);
+  }
+  .user-avatar {
+    width: 32px; height: 32px; border-radius: 50%;
+    background: linear-gradient(135deg, var(--blue-light), var(--accent));
+    display: flex; align-items: center; justify-content: center;
+    font-size: .875rem; font-weight: 700; color: var(--white);
+  }
+  .user-name { font-size: .875rem; font-weight: 600; color: rgba(255,255,255,.9); }
+  .btn-logout {
+    background: rgba(255,255,255,.08); border: 1px solid rgba(255,255,255,.12);
+    color: rgba(255,255,255,.7); padding: 7px 14px; border-radius: 8px;
+    font-family: inherit; font-size: .8125rem; font-weight: 600; cursor: pointer;
+    transition: var(--transition); display: flex; align-items: center; gap: 6px;
+  }
+  .btn-logout:hover { background: rgba(255,255,255,.15); color: var(--white); }
+
+  .emp-layout { display: flex; flex: 1; min-height: calc(100vh - 64px); }
+  .emp-sidebar {
+    width: 240px; background: var(--navy); padding: 24px 0;
+    display: flex; flex-direction: column; flex-shrink: 0;
+  }
+  .emp-sidebar-section { padding: 0 16px; margin-bottom: 8px; }
+  .emp-sidebar-label {
+    font-size: .6875rem; font-weight: 700; color: rgba(255,255,255,.3);
+    text-transform: uppercase; letter-spacing: 1.5px;
+    padding: 0 8px; margin-bottom: 6px; margin-top: 16px;
+  }
+  .emp-sidebar-item {
+    display: flex; align-items: center; gap: 10px; padding: 10px 8px;
+    border-radius: var(--radius); cursor: pointer; transition: var(--transition);
+    color: rgba(255,255,255,.55); font-size: .875rem; font-weight: 500;
+    border: none; background: none; width: 100%; text-align: left; font-family: inherit;
+  }
+  .emp-sidebar-item:hover { background: rgba(255,255,255,.08); color: rgba(255,255,255,.9); }
+  .emp-sidebar-item.active { background: var(--blue); color: var(--white); }
+  .emp-main { flex: 1; padding: 28px 32px; overflow-y: auto; }
+
+  .clock-widget {
+    background: linear-gradient(135deg, var(--navy) 0%, var(--navy-light) 100%);
+    border-radius: var(--radius-lg); padding: 32px; margin-bottom: 24px;
+    display: flex; align-items: center; justify-content: space-between;
+    box-shadow: var(--shadow-lg); position: relative; overflow: hidden;
+  }
+  .clock-widget::after {
+    content: ''; position: absolute; right: -40px; top: -40px;
+    width: 200px; height: 200px; border-radius: 50%; background: rgba(255,255,255,.04);
+  }
+  .clock-left h2 { font-size: .875rem; font-weight: 500; color: rgba(255,255,255,.6); margin-bottom: 4px; text-transform: uppercase; letter-spacing: 1px; }
+  .clock-time { font-size: 2.5rem; font-weight: 700; color: var(--white); font-family: 'DM Mono', monospace; letter-spacing: -1px; }
+  .clock-date { font-size: .9rem; color: rgba(255,255,255,.5); margin-top: 4px; }
+  .schedule-info { text-align: right; }
+  .schedule-label { font-size: .75rem; color: rgba(255,255,255,.5); text-transform: uppercase; letter-spacing: .5px; margin-bottom: 4px; }
+  .schedule-time { font-size: 1.1rem; font-weight: 700; color: rgba(255,255,255,.9); }
+  .schedule-badge {
+    display: inline-block; margin-top: 8px; padding: 4px 10px; border-radius: 999px;
+    font-size: .75rem; font-weight: 600; background: rgba(0,201,167,.2);
+    color: var(--accent); border: 1px solid rgba(0,201,167,.3);
+  }
+
+  /* GEO STATUS INDICATOR - solo para admin, oculto en empleado */
+  .geo-status {
+    display: flex; align-items: center; gap: 6px;
+    font-size: .78rem; font-weight: 600; padding: 5px 12px;
+    border-radius: 999px; margin-bottom: 16px; width: fit-content;
+  }
+  .geo-status.geo-ok { background: var(--success-soft); color: #065f46; border: 1px solid #bbf7d0; }
+  .geo-status.geo-waiting { background: var(--warn-soft); color: #92400e; border: 1px solid #fde68a; }
+  .geo-status.geo-denied { background: var(--danger-soft); color: #991b1b; border: 1px solid #fecaca; }
+  .geo-status.geo-unavail { background: var(--gray-100); color: var(--gray-500); border: 1px solid var(--gray-200); }
+  .geo-dot { width: 7px; height: 7px; border-radius: 50%; flex-shrink: 0; }
+  .geo-ok .geo-dot { background: var(--success); }
+  .geo-waiting .geo-dot { background: var(--warn); animation: pulse 1.5s ease infinite; }
+  .geo-denied .geo-dot { background: var(--danger); }
+  .geo-unavail .geo-dot { background: var(--gray-400); }
+
+  .action-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 28px; }
+  .action-card {
+    border-radius: var(--radius-lg); padding: 28px; cursor: pointer; border: none;
+    font-family: inherit; text-align: left; transition: var(--transition);
+    box-shadow: var(--shadow); overflow: hidden; display: flex;
+    align-items: center; gap: 20px; position: relative;
+  }
+  .action-card::after { content: ''; position: absolute; inset: 0; background: rgba(255,255,255,0); transition: var(--transition); }
+  .action-card:hover { transform: translateY(-3px); box-shadow: var(--shadow-lg); }
+  .action-card:hover::after { background: rgba(255,255,255,.07); }
+  .action-card:active { transform: translateY(0); }
+  .action-card-entrada { background: linear-gradient(135deg, #065f46 0%, #059669 100%); }
+  .action-card-salida  { background: linear-gradient(135deg, #7f1d1d 0%, #dc2626 100%); }
+  .action-card-icon-wrap { width: 54px; height: 54px; border-radius: 14px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; background: rgba(255,255,255,.15); }
+  .action-card-title { font-size: 1.0625rem; font-weight: 700; color: white; margin-bottom: 4px; letter-spacing: .2px; }
+  .action-card-sub { font-size: .8125rem; color: rgba(255,255,255,.65); }
+  .action-card-arrow { margin-left: auto; opacity: .5; transition: var(--transition); flex-shrink: 0; }
+  .action-card:hover .action-card-arrow { opacity: 1; transform: translateX(4px); }
+
+  .emp-tab-content { display: none; }
+  .emp-tab-content.active { display: block; }
+
+  .section-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px; }
+  .section-title { font-size: 1.125rem; font-weight: 700; color: var(--gray-900); }
+  .section-sub { font-size: .8125rem; color: var(--gray-400); margin-top: 2px; }
+  .history-card { background: var(--white); border-radius: var(--radius-lg); box-shadow: var(--shadow-sm); border: 1px solid var(--gray-100); overflow: hidden; }
+  .history-item { display: flex; align-items: center; gap: 16px; padding: 16px 20px; border-bottom: 1px solid var(--gray-100); transition: var(--transition); }
+  .history-item:last-child { border-bottom: none; }
+  .history-item:hover { background: var(--gray-50); }
+  .history-dot { width: 40px; height: 40px; border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 1.1rem; flex-shrink: 0; }
+  .dot-entrada { background: var(--success-soft); }
+  .dot-salida  { background: var(--danger-soft); }
+  .history-info { flex: 1; }
+  .history-type { font-weight: 700; font-size: .9375rem; margin-bottom: 2px; }
+  .history-tipo-entrada { color: var(--success); }
+  .history-tipo-salida  { color: var(--danger); }
+  .history-time { font-size: .8125rem; color: var(--gray-400); }
+  .history-status { display: flex; align-items: center; gap: 8px; }
+
+  .badge { display: inline-flex; align-items: center; gap: 4px; padding: 4px 10px; border-radius: 999px; font-size: .75rem; font-weight: 600; }
+  .badge-success { background: var(--success-soft); color: #065f46; }
+  .badge-danger  { background: var(--danger-soft);  color: #991b1b; }
+  .badge-warn    { background: var(--warn-soft);    color: #92400e; }
+
+  /* ─── ADMIN DASHBOARD ─────────────────────────────────── */
+  #screen-admin { flex-direction: column; background: var(--gray-50); }
+  .admin-layout { display: flex; flex: 1; min-height: calc(100vh - 64px); }
+  .admin-sidebar { width: 240px; background: var(--navy); padding: 24px 0; display: flex; flex-direction: column; flex-shrink: 0; }
+  .sidebar-section { padding: 0 16px; margin-bottom: 8px; }
+  .sidebar-label { font-size: .6875rem; font-weight: 700; color: rgba(255,255,255,.3); text-transform: uppercase; letter-spacing: 1px; padding: 0 12px; margin-bottom: 6px; }
+  .sidebar-item { display: flex; align-items: center; gap: 10px; padding: 10px 12px; border-radius: var(--radius); cursor: pointer; transition: var(--transition); color: rgba(255,255,255,.6); font-size: .9rem; font-weight: 500; border: none; background: none; width: 100%; text-align: left; font-family: inherit; }
+  .sidebar-item:hover { background: rgba(255,255,255,.08); color: var(--white); }
+  .sidebar-item.active { background: rgba(26,86,219,.4); color: var(--white); }
+  .sidebar-icon { font-size: 1.1rem; width: 20px; }
+  .admin-main { flex: 1; padding: 32px; overflow-y: auto; }
+  .admin-page-title { font-size: 1.5rem; font-weight: 700; color: var(--gray-900); margin-bottom: 4px; }
+  .admin-page-sub { font-size: .875rem; color: var(--gray-400); margin-bottom: 28px; }
+
+  .stats-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; margin-bottom: 28px; }
+  .stat-card { background: var(--white); border-radius: var(--radius-lg); padding: 20px; border: 1px solid var(--gray-100); box-shadow: var(--shadow-sm); }
+  .stat-label { font-size: .75rem; font-weight: 600; color: var(--gray-400); text-transform: uppercase; letter-spacing: .5px; margin-bottom: 8px; }
+  .stat-value { font-size: 1.75rem; font-weight: 700; color: var(--gray-900); line-height: 1; margin-bottom: 4px; }
+  .stat-icon { font-size: 1.5rem; margin-bottom: 12px; display: block; }
+
+  .filter-bar { background: var(--white); border-radius: var(--radius-lg); padding: 20px 24px; margin-bottom: 20px; border: 1px solid var(--gray-100); box-shadow: var(--shadow-sm); }
+  .filter-row { display: flex; gap: 12px; align-items: flex-end; flex-wrap: wrap; }
+  .filter-group { display: flex; flex-direction: column; gap: 6px; flex: 1; min-width: 160px; }
+  .filter-group label { font-size: .75rem; font-weight: 600; color: var(--gray-500); text-transform: uppercase; letter-spacing: .3px; }
+  .filter-group select, .filter-group input[type="date"] {
+    padding: 10px 14px; border: 1.5px solid var(--gray-200); border-radius: var(--radius);
+    font-family: inherit; font-size: .9rem; color: var(--gray-700); outline: none;
+    background: var(--white); cursor: pointer; transition: var(--transition);
+  }
+  .filter-group select:focus, .filter-group input:focus { border-color: var(--blue); box-shadow: 0 0 0 3px rgba(26,86,219,.1); }
+  .filter-actions { display: flex; gap: 8px; align-items: flex-end; padding-bottom: 1px; }
+
+  .table-card { background: var(--white); border-radius: var(--radius-lg); border: 1px solid var(--gray-100); box-shadow: var(--shadow-sm); overflow: hidden; }
+  .table-header { padding: 16px 20px; border-bottom: 1px solid var(--gray-100); display: flex; align-items: center; justify-content: space-between; }
+  .table-title { font-weight: 700; color: var(--gray-900); }
+  .table-count { font-size: .8125rem; color: var(--gray-400); margin-top: 2px; }
+  .data-table { width: 100%; border-collapse: collapse; }
+  .data-table thead tr { background: var(--gray-50); border-bottom: 2px solid var(--gray-100); }
+  .data-table th { padding: 12px 16px; text-align: left; font-size: .75rem; font-weight: 700; color: var(--gray-500); text-transform: uppercase; letter-spacing: .5px; white-space: nowrap; }
+  .data-table td { padding: 14px 16px; font-size: .9rem; color: var(--gray-700); border-bottom: 1px solid var(--gray-50); }
+  .data-table tbody tr:hover { background: var(--gray-50); }
+  .data-table tbody tr:last-child td { border-bottom: none; }
+
+  .modal-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,.55); z-index: 1000; align-items: center; justify-content: center; padding: 24px; backdrop-filter: blur(4px); }
+  .modal-overlay.open { display: flex; }
+  .modal { background: var(--white); border-radius: var(--radius-lg); padding: 36px; max-width: 480px; width: 100%; box-shadow: var(--shadow-xl); animation: fadeUp .3s ease both; }
+  .modal-icon { width: 56px; height: 56px; border-radius: 14px; display: flex; align-items: center; justify-content: center; font-size: 1.75rem; margin-bottom: 20px; }
+  .modal-icon-warn { background: var(--warn-soft); }
+  .modal-icon-success { background: var(--success-soft); }
+  .modal-title { font-size: 1.25rem; font-weight: 700; color: var(--gray-900); margin-bottom: 8px; }
+  .modal-body { font-size: .9375rem; color: var(--gray-500); margin-bottom: 20px; line-height: 1.6; }
+  .modal-highlight { background: var(--warn-soft); border: 1px solid #fde68a; border-radius: var(--radius); padding: 12px 16px; margin-bottom: 20px; font-size: .9375rem; color: #92400e; font-weight: 600; }
+  .modal-actions { display: flex; gap: 10px; }
+  .modal-actions .btn { flex: 1; }
+
+  .week-card { background: var(--white); border-radius: var(--radius-lg); padding: 24px; border: 1px solid var(--gray-100); box-shadow: var(--shadow-sm); margin-bottom: 24px; }
+  .week-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px; }
+  .week-title { font-size: 1rem; font-weight: 700; color: var(--gray-900); }
+  .hours-bar-wrap { background: var(--gray-100); border-radius: 999px; height: 8px; margin-top: 8px; overflow: hidden; }
+  .hours-bar { height: 100%; border-radius: 999px; background: linear-gradient(90deg, var(--blue), var(--accent)); transition: width .8s cubic-bezier(.4,0,.2,1); }
+  .hours-value { font-size: 1.75rem; font-weight: 700; color: var(--navy); font-family: 'DM Mono', monospace; }
+  .hours-max { font-size: .875rem; color: var(--gray-400); }
+
+  .empty-state { text-align: center; padding: 48px 24px; color: var(--gray-400); }
+  .empty-icon { font-size: 2.5rem; margin-bottom: 12px; display: block; }
+  .empty-text { font-size: .9375rem; }
+
+  .loading-overlay { display: none; position: fixed; inset: 0; background: rgba(13,31,60,.85); z-index: 9999; align-items: center; justify-content: center; flex-direction: column; gap: 16px; backdrop-filter: blur(8px); }
+  .loading-overlay.show { display: flex; }
+  .spinner { width: 44px; height: 44px; border: 3px solid rgba(255,255,255,.2); border-top-color: var(--accent); border-radius: 50%; animation: spin .7s linear infinite; }
+  .loading-text { color: rgba(255,255,255,.8); font-size: .9375rem; font-weight: 500; }
+
+  .toast-container { position: fixed; bottom: 24px; right: 24px; z-index: 10000; display: flex; flex-direction: column; gap: 10px; }
+  .toast { padding: 14px 20px; border-radius: var(--radius); font-size: .9rem; font-weight: 600; box-shadow: var(--shadow-lg); display: flex; align-items: center; gap: 10px; animation: slideIn .3s ease both; max-width: 340px; cursor: pointer; }
+  .toast-success { background: var(--navy); color: var(--white); border-left: 4px solid var(--accent); }
+  .toast-error   { background: #1a0a0a; color: var(--white); border-left: 4px solid var(--danger); }
+  .toast-info    { background: var(--navy); color: var(--white); border-left: 4px solid var(--blue-light); }
+
+  .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+  .form-grid .span-2 { grid-column: 1 / -1; }
+  .card-form { background: var(--white); border-radius: var(--radius-lg); padding: 28px; border: 1px solid var(--gray-100); box-shadow: var(--shadow-sm); margin-bottom: 24px; }
+  .card-form-title { font-size: 1rem; font-weight: 700; color: var(--gray-900); margin-bottom: 20px; padding-bottom: 16px; border-bottom: 1px solid var(--gray-100); display: flex; align-items: center; gap: 8px; }
+
+  .confirm-card { text-align: center; }
+  .confirm-check { width: 64px; height: 64px; border-radius: 50%; background: var(--success-soft); display: flex; align-items: center; justify-content: center; font-size: 2rem; margin: 0 auto 20px; }
+
+  @keyframes fadeUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+  @keyframes spin { to { transform: rotate(360deg); } }
+  @keyframes slideIn { from { opacity: 0; transform: translateX(20px); } to { opacity: 1; transform: translateX(0); } }
+  @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: .5; } }
+  .animate-pulse { animation: pulse 2s ease infinite; }
+
+  .mt-4  { margin-top: 4px; }
+  .mt-8  { margin-top: 8px; }
+  .mt-16 { margin-top: 16px; }
+  .mb-16 { margin-bottom: 16px; }
+  .text-center { text-align: center; }
+  .text-sm { font-size: .875rem; }
+  .text-muted { color: var(--gray-400); }
+  .font-mono { font-family: 'DM Mono', monospace; }
+  .divider { height: 1px; background: var(--gray-100); margin: 20px 0; }
+  .admin-tab-content { display: none; }
+  .admin-tab-content.active { display: block; }
+
+  /* ─── MIS HORAS REDISEÑO ──────────────────────────────── */
+  .horas-resumen-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 14px;
+    margin-bottom: 20px;
+  }
+  .horas-resumen-card {
+    background: var(--white);
+    border-radius: var(--radius-lg);
+    box-shadow: var(--shadow-sm);
+    border: 1px solid var(--gray-100);
+    padding: 20px;
+    text-align: center;
+    transition: var(--transition);
+  }
+  .horas-resumen-card:hover { box-shadow: var(--shadow); transform: translateY(-2px); }
+  .horas-resumen-label {
+    font-size: .68rem; font-weight: 700; color: var(--gray-400);
+    text-transform: uppercase; letter-spacing: .6px; margin-bottom: 8px;
+  }
+  .horas-resumen-valor {
+    font-size: 2.2rem; font-weight: 800;
+    font-family: 'DM Mono', monospace; line-height: 1;
+  }
+  .horas-resumen-sub {
+    font-size: .72rem; color: var(--gray-400); margin-top: 4px;
+  }
+  .horas-mini-bar {
+    height: 5px; background: var(--gray-100); border-radius: 999px;
+    overflow: hidden; margin-top: 10px;
+  }
+  .horas-mini-bar-fill {
+    height: 100%; border-radius: 999px; transition: width .6s ease;
+  }
+  .horas-filtros-panel {
+    background: var(--white);
+    border-radius: var(--radius-lg);
+    box-shadow: var(--shadow-sm);
+    border: 1px solid var(--gray-100);
+    padding: 16px 20px;
+    margin-bottom: 16px;
+  }
+
+  @media(max-width:640px){
+    .action-grid { grid-template-columns: 1fr; }
+    .stats-grid  { grid-template-columns: 1fr 1fr; }
+    .form-grid   { grid-template-columns: 1fr; }
+    .admin-sidebar { display: none; }
+    .filter-row { flex-direction: column; }
+    .horas-resumen-grid { grid-template-columns: 1fr; }
+  }
+</style>
+</head>
+<body>
+
+<div class="loading-overlay" id="loadingOverlay">
+  <div class="spinner"></div>
+  <div class="loading-text" id="loadingText">Cargando...</div>
+</div>
+
+<div class="toast-container" id="toastContainer"></div>
+
+<!-- SCREEN 1: LOGIN -->
+<div class="screen active" id="screen-login">
+  <div class="login-blob"></div>
+  <div class="login-blob2"></div>
+  <div class="login-card">
+    <div class="login-logo">
+      <img src="https://comcesa.net/wp-content/uploads/2022/08/cropped-comcesa-logotipo-2022.png" alt="COMCESA" onerror="this.style.display='none';this.nextElementSibling.style.display='flex'">
+      <span style="display:none;font-size:1.75rem;font-weight:800;color:var(--navy);letter-spacing:-2px;">COMCESA</span>
+    </div>
+    <h1 class="login-title">Control de Asistencia</h1>
+    <p class="login-subtitle">Ingresa tu nombre de usuario para continuar</p>
+    <div class="form-group">
+      <label class="form-label">Usuario</label>
+      <input type="text" class="form-input" id="loginUsername" placeholder="" autocomplete="username" autocapitalize="none">
+    </div>
+    <button class="btn btn-primary" id="btnLogin">
+      <span>Continuar</span>
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+    </button>
+    <p class="text-center text-sm mt-16" style="color:var(--gray-400);">Componentes de Centroamérica, S.A.</p>
+  </div>
+</div>
+
+<!-- SCREEN 2: TOTP SETUP -->
+<div class="screen" id="screen-totp-setup">
+  <div class="login-blob"></div>
+  <div class="login-blob2"></div>
+  <div class="totp-card">
+    <div class="totp-header">
+      <img src="https://comcesa.net/wp-content/uploads/2022/08/cropped-comcesa-logotipo-2022.png" alt="COMCESA" style="height:40px;width:auto;margin:0 auto 20px;display:block;">
+      <h2>Configuración de seguridad</h2>
+      <p>Primera vez en el sistema. Sigue los pasos para activar tu verificación en dos pasos.</p>
+    </div>
+    <div class="steps-list">
+      <div class="step-item"><div class="step-num">1</div><div>Descarga <strong>Google Authenticator</strong> en tu celular (Play Store o App Store)</div></div>
+      <div class="step-item"><div class="step-num">2</div><div>Abre la app y toca el botón <strong>+</strong></div></div>
+      <div class="step-item"><div class="step-num">3</div><div>Selecciona <strong>"Escanear código QR"</strong></div></div>
+      <div class="step-item"><div class="step-num">4</div><div>Escanea el código QR de abajo</div></div>
+    </div>
+    <div class="qr-wrapper"><div id="qrcode"></div></div>
+    <div id="secretDisplay" style="display:none;"></div>
+    <div class="divider"></div>
+    <p style="font-size:.875rem;color:var(--gray-500);margin-bottom:16px;text-align:center;">Una vez configurado, ingresa el código de 6 dígitos de tu app:</p>
+    <div class="form-group">
+      <label class="form-label-dark">Código de verificación</label>
+      <input type="text" class="form-input-light" id="setupTotpCode" placeholder="000000" maxlength="6" inputmode="numeric" style="text-align:center;font-family:'DM Mono',monospace;font-size:1.5rem;letter-spacing:8px;">
+    </div>
+    <button class="btn btn-primary" id="btnVerifySetup">Verificar y activar</button>
+    <button class="btn btn-ghost btn-full mt-8" id="btnSetupBack">← Volver</button>
+  </div>
+</div>
+
+<!-- SCREEN 3: TOTP VERIFY -->
+<div class="screen" id="screen-totp-verify">
+  <div class="login-blob"></div>
+  <div class="login-blob2"></div>
+  <div class="totp-card">
+    <div class="totp-header">
+      <img src="https://comcesa.net/wp-content/uploads/2022/08/cropped-comcesa-logotipo-2022.png" alt="COMCESA" style="height:40px;width:auto;margin:0 auto 20px;display:block;">
+      <h2>Verificación de identidad</h2>
+      <p>Hola, <strong id="verifyName"></strong>. Ingresa el código de 6 dígitos de tu aplicación Google Authenticator.</p>
+    </div>
+    <div class="form-group">
+      <label class="form-label-dark">Código de 6 dígitos</label>
+      <input type="text" class="form-input-light" id="verifyTotpCode" placeholder="000000" maxlength="6" inputmode="numeric" style="text-align:center;font-family:'DM Mono',monospace;font-size:1.75rem;letter-spacing:10px;">
+    </div>
+    <button class="btn btn-primary" id="btnVerifyLogin"><span>Verificar</span></button>
+    <button class="btn btn-ghost btn-full mt-8" id="btnVerifyBack">← Volver</button>
+    <p class="text-center text-sm text-muted mt-8">El código se renueva cada 30 segundos</p>
+  </div>
+</div>
+
+<!-- SCREEN 4: EMPLOYEE DASHBOARD -->
+<div class="screen" id="screen-employee">
+  <header class="app-header">
+    <div class="app-header-logo">
+      <img src="https://comcesa.net/wp-content/uploads/2022/08/cropped-comcesa-logotipo-2022.png" alt="COMCESA" onerror="this.style.display='none';this.nextElementSibling.style.display='block'">
+      <span style="display:none;font-size:1rem;font-weight:800;color:white;">COMCESA</span>
+    </div>
+    <div class="app-header-right">
+      <div class="user-badge">
+        <div class="user-avatar" id="empAvatar">JD</div>
+        <span class="user-name" id="empHeaderName">Nombre</span>
+      </div>
+      <button class="btn-logout" id="btnEmpLogout">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4M16 17l5-5-5-5M21 12H9"/></svg>
+        Salir
+      </button>
+    </div>
+  </header>
+
+  <div class="emp-layout">
+    <aside class="emp-sidebar">
+      <div class="emp-sidebar-section">
+        <div class="emp-sidebar-label">Mi panel</div>
+        <button class="emp-sidebar-item active" data-emp-tab="inicio">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>
+          Inicio
+        </button>
+        <button class="emp-sidebar-item" data-emp-tab="historial">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/></svg>
+          Historial
+        </button>
+        <button class="emp-sidebar-item" data-emp-tab="horas">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>
+          Mis horas
+        </button>
+      </div>
+    </aside>
+
+    <main class="emp-main">
+      <!-- TAB INICIO -->
+      <div class="emp-tab-content active" id="emp-tab-inicio">
+        <div class="clock-widget">
+          <div class="clock-left">
+            <h2>Hora actual</h2>
+            <div class="clock-time" id="clockTime">00:00:00</div>
+            <div class="clock-date" id="clockDate">—</div>
+          </div>
+          <div class="schedule-info">
+            <div class="schedule-label">Tu horario hoy</div>
+            <div class="schedule-time" id="empSchedule">—</div>
+            <div class="schedule-badge" id="empDayType">—</div>
+          </div>
+        </div>
+
+        <div class="week-card">
+          <div class="week-header">
+            <div>
+              <div class="week-title">Horas trabajadas esta semana</div>
+              <div class="text-sm text-muted mt-4" id="weekRange">—</div>
+            </div>
+            <div style="text-align:right;">
+              <span class="hours-value" id="weekHours">0</span>
+              <span class="hours-max"> / 44 hrs</span>
+            </div>
+          </div>
+          <div class="hours-bar-wrap"><div class="hours-bar" id="hoursBar" style="width:0%"></div></div>
+        </div>
+
+        <!-- GPS captura en background — completamente oculto para el empleado -->
+        <div id="geoStatusBar" style="display:none;">
+          <div class="geo-dot"></div>
+          <span id="geoStatusText"></span>
+        </div>
+
+        <div class="action-grid">
+          <button class="action-card action-card-entrada" id="btnEntrada">
+            <div class="action-card-icon-wrap">
+              <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.2"><path d="M15 3h4a2 2 0 012 2v14a2 2 0 01-2 2h-4M10 17l5-5-5-5M15 12H3"/></svg>
+            </div>
+            <div>
+              <div class="action-card-title">Registrar Entrada</div>
+              <div class="action-card-sub">Marca tu llegada al trabajo</div>
+            </div>
+            <div class="action-card-arrow">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+            </div>
+          </button>
+          <button class="action-card action-card-salida" id="btnSalida">
+            <div class="action-card-icon-wrap">
+              <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.2"><path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4M16 17l5-5-5-5M21 12H9"/></svg>
+            </div>
+            <div>
+              <div class="action-card-title">Registrar Salida</div>
+              <div class="action-card-sub">Marca tu salida del trabajo</div>
+            </div>
+            <div class="action-card-arrow">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+            </div>
+          </button>
+        </div>
+
+        <div class="section-header">
+          <div>
+            <div class="section-title">Registros de hoy</div>
+            <div class="section-sub" id="empTodayDate">—</div>
+          </div>
+        </div>
+        <div class="history-card" id="empTodayHistory">
+          <div class="empty-state"><div class="empty-text">No hay registros hoy</div></div>
+        </div>
+      </div>
+
+      <!-- TAB HISTORIAL -->
+      <div class="emp-tab-content" id="emp-tab-historial">
+        <div class="section-header">
+          <div>
+            <div class="section-title">Historial completo</div>
+            <div class="section-sub">Todos tus registros de asistencia</div>
+          </div>
+        </div>
+        <div class="filter-bar" style="margin-bottom:16px;">
+          <div class="filter-row" style="flex-wrap:wrap;gap:12px;align-items:flex-end;">
+            <div class="filter-group" style="min-width:140px;">
+              <label>Período</label>
+              <select id="empHistorialPeriod" style="padding:8px 12px;border:1.5px solid var(--gray-200);border-radius:var(--radius);font-family:inherit;font-size:.875rem;outline:none;background:var(--white);cursor:pointer;">
+                <option value="all">Todo</option>
+                <option value="today">Hoy</option>
+                <option value="week" selected>Esta semana</option>
+                <option value="last_week">Semana pasada</option>
+                <option value="month">Este mes</option>
+                <option value="last_month">Mes pasado</option>
+                <option value="custom">Rango personalizado</option>
+              </select>
+            </div>
+            <div id="empCustomRange" style="display:none;gap:10px;flex-wrap:wrap;">
+              <div class="filter-group" style="min-width:140px;">
+                <label>Desde</label>
+                <input type="date" id="empFechaDesde" style="padding:8px 12px;border:1.5px solid var(--gray-200);border-radius:var(--radius);font-family:inherit;font-size:.875rem;outline:none;">
+              </div>
+              <div class="filter-group" style="min-width:140px;">
+                <label>Hasta</label>
+                <input type="date" id="empFechaHasta" style="padding:8px 12px;border:1.5px solid var(--gray-200);border-radius:var(--radius);font-family:inherit;font-size:.875rem;outline:none;">
+              </div>
+            </div>
+            <div style="display:flex;gap:8px;align-items:flex-end;">
+              <button class="btn btn-navy btn-sm" id="btnEmpHistorialFilter">
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+                Buscar
+              </button>
+              <button class="btn btn-success btn-sm" id="btnEmpExport">
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M7 10l5 5 5-5M12 15V3"/></svg>
+                Exportar Excel
+              </button>
+            </div>
+          </div>
+        </div>
+        <div class="history-card" id="empFullHistory">
+          <div class="empty-state"><div class="empty-text">Selecciona un período y presiona Buscar</div></div>
+        </div>
+      </div>
+
+      <!-- ══════════════════════════════════════════════════
+           TAB MIS HORAS — REDISEÑADO
+      ══════════════════════════════════════════════════ -->
+      <div class="emp-tab-content" id="emp-tab-horas">
+
+        <!-- Encabezado -->
+        <div style="margin-bottom:20px;">
+          <div class="section-title">⏱️ Mis horas</div>
+          <div class="section-sub">Acumulado de horas trabajadas</div>
+        </div>
+
+        <!-- Tarjetas resumen (se llenan dinámicamente) -->
+        <div class="horas-resumen-grid" id="empHorasResumen">
+          <div class="horas-resumen-card">
+            <div class="horas-resumen-label">Total horas</div>
+            <div class="horas-resumen-valor" style="color:var(--gray-300);">—</div>
+            <div class="horas-resumen-sub">hrs trabajadas</div>
+          </div>
+          <div class="horas-resumen-card">
+            <div class="horas-resumen-label">Progreso</div>
+            <div class="horas-resumen-valor" style="color:var(--gray-300);">—%</div>
+            <div class="horas-mini-bar"><div class="horas-mini-bar-fill" style="width:0%;background:var(--gray-200);"></div></div>
+          </div>
+          <div class="horas-resumen-card">
+            <div class="horas-resumen-label">Períodos</div>
+            <div class="horas-resumen-valor" style="color:var(--gray-300);">—</div>
+            <div class="horas-resumen-sub">registrados</div>
+          </div>
+        </div>
+
+        <!-- Panel de filtros + selector de vista -->
+        <div class="horas-filtros-panel">
+          <div style="display:flex;flex-wrap:wrap;gap:12px;align-items:flex-end;justify-content:space-between;">
+
+            <!-- Selector Por semana / Por mes -->
+            <div style="display:flex;gap:6px;align-items:center;">
+              <div style="display:flex;background:var(--gray-100);border-radius:var(--radius);padding:3px;gap:2px;">
+                <button id="empBtnSemana" onclick="switchEmpVista('semana')"
+                  style="padding:6px 16px;border-radius:8px;border:none;font-family:inherit;font-size:.8rem;font-weight:600;cursor:pointer;background:var(--white);color:var(--navy);box-shadow:0 1px 4px rgba(0,0,0,.1);transition:var(--transition);">
+                  📅 Por semana
+                </button>
+                <button id="empBtnMes" onclick="switchEmpVista('mes')"
+                  style="padding:6px 16px;border-radius:8px;border:none;font-family:inherit;font-size:.8rem;font-weight:600;cursor:pointer;background:transparent;color:var(--gray-500);transition:var(--transition);">
+                  📆 Por mes
+                </button>
+              </div>
+            </div>
+
+            <!-- Selector de período -->
+            <div style="display:flex;flex-wrap:wrap;gap:10px;align-items:flex-end;">
+              <div class="filter-group" style="min-width:150px;">
+                <label>Período</label>
+                <select id="empHorasPeriod" style="padding:7px 10px;border:1.5px solid var(--gray-200);border-radius:var(--radius);font-family:inherit;font-size:.82rem;outline:none;background:var(--white);">
+                  <option value="all">Todo</option>
+                  <option value="this_month" selected>Este mes</option>
+                  <option value="last_month">Mes pasado</option>
+                  <option value="this_week">Esta semana</option>
+                  <option value="last_week">Semana pasada</option>
+                  <option value="week1">Semana 1 del mes</option>
+                  <option value="week2">Semana 2 del mes</option>
+                  <option value="week3">Semana 3 del mes</option>
+                  <option value="week4">Semana 4 del mes</option>
+                  <option value="custom_month">Mes específico</option>
+                </select>
+              </div>
+              <div id="empHorasCustomMonth" style="display:none;gap:8px;">
+                <div class="filter-group" style="min-width:110px;">
+                  <label>Mes</label>
+                  <select id="empHorasMes" style="padding:7px 10px;border:1.5px solid var(--gray-200);border-radius:var(--radius);font-family:inherit;font-size:.82rem;outline:none;background:var(--white);">
+                    <option value="1">Enero</option><option value="2">Febrero</option><option value="3">Marzo</option>
+                    <option value="4">Abril</option><option value="5">Mayo</option><option value="6">Junio</option>
+                    <option value="7">Julio</option><option value="8">Agosto</option><option value="9">Septiembre</option>
+                    <option value="10">Octubre</option><option value="11">Noviembre</option><option value="12">Diciembre</option>
+                  </select>
+                </div>
+                <div class="filter-group" style="min-width:80px;">
+                  <label>Año</label>
+                  <select id="empHorasAnio" style="padding:7px 10px;border:1.5px solid var(--gray-200);border-radius:var(--radius);font-family:inherit;font-size:.82rem;outline:none;background:var(--white);">
+                    <option value="2025">2025</option><option value="2026" selected>2026</option><option value="2027">2027</option>
+                  </select>
+                </div>
+              </div>
+              <button class="btn btn-navy btn-sm" onclick="loadEmpHoras()">
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+                Buscar
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Tabla / tarjetas de resultados -->
+        <div class="history-card" id="empHorasTable">
+          <div class="empty-state">
+            <span class="empty-icon">⏱️</span>
+            <div class="empty-text">Selecciona un período y presiona Buscar</div>
+          </div>
+        </div>
+      </div>
+      <!-- ══ FIN TAB MIS HORAS ══ -->
+
+    </main>
+  </div>
+</div>
+
+<!-- SCREEN 5: ADMIN DASHBOARD -->
+<div class="screen" id="screen-admin">
+  <header class="app-header">
+    <div class="app-header-logo">
+      <img src="https://comcesa.net/wp-content/uploads/2022/08/cropped-comcesa-logotipo-2022.png" alt="COMCESA" onerror="this.style.display='none'" style="height:34px;width:auto;filter:brightness(0) invert(1);">
+    </div>
+    <div class="app-header-right">
+      <div class="user-badge">
+        <div class="user-avatar" style="background:linear-gradient(135deg,#f59e0b,#ef4444);" id="adminAvatar">AD</div>
+        <span class="user-name" id="adminHeaderName">Administrador</span>
+      </div>
+      <button class="btn-logout" id="btnAdminLogout">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4M16 17l5-5-5-5M21 12H9"/></svg>
+        Salir
+      </button>
+    </div>
+  </header>
+
+  <div class="admin-layout">
+    <aside class="admin-sidebar">
+      <div class="sidebar-section">
+        <div class="sidebar-label">Módulos</div>
+        <button class="sidebar-item active" data-tab="asistencias">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg>
+          Asistencias
+        </button>
+        <button class="sidebar-item" data-tab="horas">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>
+          Horas Semanales
+        </button>
+        <button class="sidebar-item" data-tab="empleados">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87M16 3.13a4 4 0 010 7.75"/></svg>
+          Empleados
+        </button>
+      </div>
+    </aside>
+
+    <main class="admin-main">
+      <!-- Tab: Asistencias -->
+      <div class="admin-tab-content active" id="tab-asistencias">
+        <h1 class="admin-page-title">📊 Historial de Asistencias</h1>
+        <p class="admin-page-sub">Revisa y filtra los registros de entrada y salida del personal</p>
+
+        <div class="stats-grid" id="adminStats">
+          <div class="stat-card"><span class="stat-icon">📋</span><div class="stat-label">Total registros hoy</div><div class="stat-value" id="statTotal">—</div></div>
+          <div class="stat-card"><span class="stat-icon">✅</span><div class="stat-label">A tiempo hoy</div><div class="stat-value" id="statOnTime">—</div></div>
+          <div class="stat-card"><span class="stat-icon">⚠️</span><div class="stat-label">Tardanzas hoy</div><div class="stat-value" id="statLate">—</div></div>
+          <div class="stat-card"><span class="stat-icon">🚪</span><div class="stat-label">Salidas anticipadas</div><div class="stat-value" id="statEarly">—</div></div>
+        </div>
+
+        <div class="filter-bar">
+          <div class="filter-row" style="flex-wrap:wrap;gap:12px;align-items:flex-end;">
+            <div class="filter-group">
+              <label>Buscar empleado</label>
+              <input type="text" id="adminEmpSearch" placeholder="Escribe nombre o username..." autocomplete="off" style="padding:8px 12px;border:1.5px solid var(--gray-200);border-radius:var(--radius);font-family:inherit;font-size:.875rem;outline:none;transition:var(--transition);">
+            </div>
+            <div class="filter-group" style="min-width:200px;max-width:220px;">
+              <label>O selecciona</label>
+              <select id="adminEmpFilter"><option value="">Todos los empleados</option></select>
+            </div>
+            <div class="filter-group" style="min-width:150px;max-width:180px;">
+              <label>Período rápido</label>
+              <select id="adminPeriodFilter">
+                <option value="">Personalizado</option>
+                <option value="today" selected>Hoy</option>
+                <option value="yesterday">Ayer</option>
+                <option value="week">Esta semana</option>
+                <option value="last_week">Semana pasada</option>
+                <option value="month">Este mes</option>
+                <option value="last_month">Mes pasado</option>
+              </select>
+            </div>
+            <div class="filter-group" style="min-width:140px;">
+              <label>Desde</label>
+              <input type="date" id="adminDesde" style="padding:8px 12px;border:1.5px solid var(--gray-200);border-radius:var(--radius);font-family:inherit;font-size:.875rem;color:var(--gray-700);outline:none;background:var(--white);cursor:pointer;width:100%;transition:var(--transition);">
+            </div>
+            <div class="filter-group" style="min-width:140px;">
+              <label>Hasta</label>
+              <input type="date" id="adminHasta" style="padding:8px 12px;border:1.5px solid var(--gray-200);border-radius:var(--radius);font-family:inherit;font-size:.875rem;color:var(--gray-700);outline:none;background:var(--white);cursor:pointer;width:100%;transition:var(--transition);">
+            </div>
+            <div class="filter-actions">
+              <button class="btn btn-navy btn-sm" id="btnAdminFilter">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+                Buscar
+              </button>
+              <button class="btn btn-ghost btn-sm" id="btnAdminClear">Limpiar</button>
+            </div>
+          </div>
+        </div>
+
+        <div class="table-card">
+          <div class="table-header">
+            <div>
+              <div class="table-title">Registros</div>
+              <div class="table-count" id="adminTableCount">0 resultados</div>
+            </div>
+            <button class="btn btn-success btn-sm" id="btnExportCSV">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M7 10l5 5 5-5M12 15V3"/></svg>
+              Exportar Excel
+            </button>
+          </div>
+          <div style="overflow-x:auto;">
+            <table class="data-table">
+              <thead>
+                <tr><th>#</th><th>Empleado</th><th>Tipo</th><th>Fecha y Hora</th><th>Estado</th><th>Diferencia</th><th>Justificación</th><th>Ubicación</th></tr>
+              </thead>
+              <tbody id="adminTableBody">
+                <tr><td colspan="8"><div class="empty-state"><span class="empty-icon">🔍</span><div class="empty-text">Aplica un filtro para ver resultados</div></div></td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- Tab: Horas Semanales -->
+      <div class="admin-tab-content" id="tab-horas">
+        <h1 class="admin-page-title">⏱️ Horas Trabajadas por Semana</h1>
+        <p class="admin-page-sub">Resumen de horas acumuladas por empleado</p>
+
+        <div class="filter-bar">
+          <div class="filter-row" style="flex-wrap:wrap;gap:12px;align-items:flex-end;">
+            <div class="filter-group">
+              <label>Buscar empleado</label>
+              <input type="text" id="horasEmpSearch" placeholder="Escribe nombre o username..." autocomplete="off" style="padding:8px 12px;border:1.5px solid var(--gray-200);border-radius:var(--radius);font-family:inherit;font-size:.875rem;outline:none;transition:var(--transition);">
+            </div>
+            <div class="filter-group" style="min-width:200px;max-width:220px;">
+              <label>O selecciona</label>
+              <select id="horasEmpFilter"><option value="">Todos los empleados</option></select>
+            </div>
+            <div class="filter-group" style="min-width:160px;">
+              <label>Período</label>
+              <select id="horasPeriodFilter">
+                <option value="all">Todo</option>
+                <option value="this_month" selected>Este mes</option>
+                <option value="last_month">Mes pasado</option>
+                <option value="this_week">Esta semana</option>
+                <option value="last_week">Semana pasada</option>
+                <option value="week1">Semana 1</option>
+                <option value="week2">Semana 2</option>
+                <option value="week3">Semana 3</option>
+                <option value="week4">Semana 4</option>
+                <option value="custom_month">Mes específico</option>
+              </select>
+            </div>
+            <div id="horasMesAnioGroup" style="display:none;gap:10px;flex-wrap:wrap;">
+              <div class="filter-group" style="min-width:120px;">
+                <label>Mes</label>
+                <select id="horasMesSelect" style="padding:8px 12px;border:1.5px solid var(--gray-200);border-radius:var(--radius);font-family:inherit;font-size:.875rem;outline:none;background:var(--white);">
+                  <option value="1">Enero</option><option value="2">Febrero</option><option value="3">Marzo</option>
+                  <option value="4">Abril</option><option value="5">Mayo</option><option value="6">Junio</option>
+                  <option value="7">Julio</option><option value="8">Agosto</option><option value="9">Septiembre</option>
+                  <option value="10">Octubre</option><option value="11">Noviembre</option><option value="12">Diciembre</option>
+                </select>
+              </div>
+              <div class="filter-group" style="min-width:90px;">
+                <label>Año</label>
+                <select id="horasAnioSelect" style="padding:8px 12px;border:1.5px solid var(--gray-200);border-radius:var(--radius);font-family:inherit;font-size:.875rem;outline:none;background:var(--white);">
+                  <option value="2025">2025</option><option value="2026" selected>2026</option><option value="2027">2027</option>
+                </select>
+              </div>
+            </div>
+            <div class="filter-actions">
+              <button class="btn btn-navy btn-sm" id="btnHorasFilter">Buscar</button>
+              <button class="btn btn-ghost btn-sm" id="btnHorasClear">Limpiar</button>
+            </div>
+          </div>
+        </div>
+
+        <div class="table-card">
+          <div class="table-header">
+            <div><div class="table-title">Horas semanales</div></div>
+            <div style="display:flex;gap:8px;align-items:center;">
+              <div style="display:flex;background:var(--gray-100);border-radius:var(--radius);padding:3px;gap:2px;">
+                <button id="btnVistaSemanual" onclick="switchVistaHoras('semana')" style="padding:5px 14px;border-radius:6px;border:none;font-family:inherit;font-size:.8rem;font-weight:600;cursor:pointer;background:var(--white);color:var(--navy);box-shadow:var(--shadow-sm);transition:var(--transition);">Por semana</button>
+                <button id="btnVistaMensual" onclick="switchVistaHoras('mes')" style="padding:5px 14px;border-radius:6px;border:none;font-family:inherit;font-size:.8rem;font-weight:600;cursor:pointer;background:transparent;color:var(--gray-500);transition:var(--transition);">Por mes</button>
+              </div>
+              <button class="btn btn-success btn-sm" id="btnExportHoras">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M7 10l5 5 5-5M12 15V3"/></svg>
+                Exportar
+              </button>
+            </div>
+          </div>
+          <div id="vistaSemanual" style="overflow-x:auto;">
+            <table class="data-table">
+              <thead><tr><th>Empleado</th><th>Semana inicio</th><th>Semana fin</th><th>Horas trabajadas</th><th>Progreso</th></tr></thead>
+              <tbody id="horasTableBody"><tr><td colspan="5"><div class="empty-state"><div class="empty-text">Selecciona un empleado o busca todos</div></div></td></tr></tbody>
+            </table>
+          </div>
+          <div id="vistaMensual" style="display:none;overflow-x:auto;">
+            <table class="data-table">
+              <thead><tr><th>Empleado</th><th>Mes</th><th>Horas acumuladas</th><th>Meta mensual</th><th>Progreso</th></tr></thead>
+              <tbody id="horasMesTableBody"><tr><td colspan="5"><div class="empty-state"><div class="empty-text">Primero busca los datos en la vista semanal</div></div></td></tr></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- Tab: Empleados -->
+      <div class="admin-tab-content" id="tab-empleados">
+        <h1 class="admin-page-title">👥 Gestión de Empleados</h1>
+        <p class="admin-page-sub">Agrega nuevos colaboradores al sistema</p>
+
+        <div class="card-form">
+          <div class="card-form-title"><span>➕</span> Agregar nuevo empleado</div>
+          <div class="form-grid">
+            <div class="form-group">
+              <label class="form-label-dark">Nombre completo *</label>
+              <input type="text" class="form-input-light" id="newNombre" placeholder="Ej. Juan Pérez">
+            </div>
+            <div class="form-group">
+              <label class="form-label-dark">Username *</label>
+              <input type="text" class="form-input-light" id="newUsername" placeholder="Ej. juan.perez">
+            </div>
+            <div class="form-group">
+              <label class="form-label-dark">Correo electrónico</label>
+              <input type="email" class="form-input-light" id="newCorreo" placeholder="juan@comcesa.net">
+            </div>
+            <div class="form-group">
+              <label class="form-label-dark">Hora de entrada</label>
+              <input type="text" class="form-input-light" id="newHoraEntrada" placeholder="8:00" value="8:00">
+            </div>
+            <div class="form-group">
+              <label class="form-label-dark">Hora salida Lun–Jue</label>
+              <input type="text" class="form-input-light" id="newHoraSalidaLJ" placeholder="18:00" value="18:00">
+            </div>
+            <div class="form-group">
+              <label class="form-label-dark">Hora salida Viernes</label>
+              <input type="text" class="form-input-light" id="newHoraSalidaV" placeholder="17:00" value="17:00">
+            </div>
+          </div>
+          <button class="btn btn-primary" id="btnAddEmployee" style="max-width:220px;">Agregar empleado</button>
+        </div>
+
+        <div class="table-card">
+          <div class="table-header"><div><div class="table-title">Empleados registrados</div></div></div>
+          <div style="overflow-x:auto;">
+            <table class="data-table">
+              <thead><tr><th>#</th><th>Nombre</th><th>Username</th><th>Entrada</th><th>Sal. L-J</th><th>Sal. V</th><th>Autenticador</th></tr></thead>
+              <tbody id="empListBody"><tr><td colspan="7"><div class="empty-state"><span class="empty-icon animate-pulse">👥</span><div class="empty-text">Cargando empleados...</div></div></td></tr></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </main>
+  </div>
+</div>
+
+<!-- MODALS -->
+<div class="modal-overlay" id="modalTardanza">
+  <div class="modal">
+    <div class="modal-icon modal-icon-warn">⚠️</div>
+    <h2 class="modal-title">Llegada tarde detectada</h2>
+    <div class="modal-body">Estás marcando tu entrada fuera del tiempo permitido.</div>
+    <div class="modal-highlight" id="tardanzaInfo">— min tarde</div>
+    <div class="form-group">
+      <label class="form-label-dark">Motivo de la tardanza *</label>
+      <textarea class="form-input-light" id="tardanzaJustif" rows="3" placeholder="Explica brevemente el motivo..." style="resize:vertical;"></textarea>
+    </div>
+    <div class="modal-actions">
+      <button class="btn btn-ghost" id="btnTardanzaCancel">Cancelar</button>
+      <button class="btn btn-primary" id="btnTardanzaConfirm">Registrar entrada</button>
+    </div>
+  </div>
+</div>
+
+<div class="modal-overlay" id="modalSalidaAnticipada">
+  <div class="modal">
+    <div class="modal-icon modal-icon-warn">🚪</div>
+    <h2 class="modal-title">Salida anticipada</h2>
+    <div class="modal-body">Estás marcando tu salida antes del tiempo establecido.</div>
+    <div class="modal-highlight" id="salidaInfo">— min antes</div>
+    <div class="form-group">
+      <label class="form-label-dark">Motivo de la salida anticipada *</label>
+      <textarea class="form-input-light" id="salidaJustif" rows="3" placeholder="Explica brevemente el motivo..." style="resize:vertical;"></textarea>
+    </div>
+    <div class="modal-actions">
+      <button class="btn btn-ghost" id="btnSalidaCancel">Cancelar</button>
+      <button class="btn btn-danger" id="btnSalidaConfirm">Registrar salida</button>
+    </div>
+  </div>
+</div>
+
+<div class="modal-overlay" id="modalSuccess">
+  <div class="modal">
+    <div class="confirm-card">
+      <div class="confirm-check">✅</div>
+      <h2 class="modal-title" id="successTitle">¡Registro exitoso!</h2>
+      <div class="modal-body" id="successBody">Tu marcaje ha sido guardado correctamente.</div>
+      <button class="btn btn-primary" id="btnSuccessClose">Aceptar</button>
+    </div>
+  </div>
+</div>
+
+<div class="modal-overlay" id="modalSalidaManual">
+  <div class="modal" style="max-width:440px;">
+    <div style="padding:28px 28px 24px;">
+      <div style="font-size:1.5rem;margin-bottom:12px;">🛠️</div>
+      <h2 style="font-size:1.1rem;font-weight:700;color:var(--navy);margin-bottom:4px;">Registrar salida manual</h2>
+      <p style="font-size:.85rem;color:var(--gray-500);margin-bottom:20px;" id="salidaManualDesc">Empleado — fecha</p>
+      <div style="display:flex;flex-direction:column;gap:14px;">
+        <div class="filter-group">
+          <label>Fecha de salida</label>
+          <input type="date" id="salidaManualFecha" style="padding:8px 12px;border:1.5px solid var(--gray-200);border-radius:var(--radius);font-family:inherit;font-size:.875rem;outline:none;width:100%;box-sizing:border-box;">
+        </div>
+        <div class="filter-group">
+          <label>Hora de salida</label>
+          <input type="time" id="salidaManualHora" style="padding:8px 12px;border:1.5px solid var(--gray-200);border-radius:var(--radius);font-family:inherit;font-size:.875rem;outline:none;width:100%;box-sizing:border-box;">
+        </div>
+        <div class="filter-group">
+          <label>Motivo de corrección</label>
+          <input type="text" id="salidaManualMotivo" placeholder="Ej: Empleado olvidó marcar salida" style="padding:8px 12px;border:1.5px solid var(--gray-200);border-radius:var(--radius);font-family:inherit;font-size:.875rem;outline:none;width:100%;box-sizing:border-box;">
+        </div>
+      </div>
+      <div style="display:flex;gap:10px;margin-top:24px;">
+        <button class="btn btn-ghost btn-sm" style="flex:1;" onclick="document.getElementById('modalSalidaManual').classList.remove('open')">Cancelar</button>
+        <button class="btn btn-navy btn-sm" style="flex:2;" id="btnConfirmarSalidaManual">Registrar salida</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+// ════════════════════════════════════════════════════════════
+// CONFIGURACIÓN
+// ════════════════════════════════════════════════════════════
+const API_URL = 'https://script.google.com/macros/s/AKfycbzlSXj7GrBNwObtCfRXkq4cOdMzNNgqB0MB3TT1FG9cJPlDxdjfLaLO9-TiFplQZZEm-A/exec';
+
+// ════════════════════════════════════════════════════════════
+// ESTADO GLOBAL
+// ════════════════════════════════════════════════════════════
+let currentEmployee     = null;
+let pendingAction       = null;
+let clockInterval       = null;
+let adminAttendanceData = [];
+let adminHorasData      = [];
+let pendingGeo          = null; // { lat, lon } o null
+let geoStatus           = 'waiting'; // 'waiting' | 'ok' | 'denied' | 'unavail'
+
+// ════════════════════════════════════════════════════════════
+// GEOLOCALIZACIÓN — captura en background, sin mostrar al empleado
+// ════════════════════════════════════════════════════════════
+function iniciarGeoWatch() {
+  const bar    = document.getElementById('geoStatusBar');
+  const texto  = document.getElementById('geoStatusText');
+
+  if (!navigator.geolocation) {
+    geoStatus   = 'unavail';
+    pendingGeo  = null;
+    return;
+  }
+
+  geoStatus   = 'waiting';
+
+  navigator.geolocation.getCurrentPosition(
+    (pos) => {
+      const lat = parseFloat(pos.coords.latitude.toFixed(6));
+      const lon = parseFloat(pos.coords.longitude.toFixed(6));
+      pendingGeo = { lat: String(lat), lon: String(lon) };
+      geoStatus  = 'ok';
+    },
+    (err) => {
+      pendingGeo = null;
+      if (err.code === err.PERMISSION_DENIED) {
+        geoStatus  = 'denied';
+      } else {
+        geoStatus  = 'unavail';
+      }
+    },
+    { timeout: 10000, maximumAge: 60000, enableHighAccuracy: true }
+  );
+}
+
+// Refrescar ubicación antes de registrar (en caso de que haya caducado)
+function refrescarGeo() {
+  return new Promise((resolve) => {
+    if (!navigator.geolocation) { resolve(null); return; }
+
+    // Si ya tenemos una buena ubicación reciente, usarla
+    if (pendingGeo && geoStatus === 'ok') { resolve(pendingGeo); return; }
+
+    navigator.geolocation.getCurrentPosition(
+      (pos) => {
+        const lat = parseFloat(pos.coords.latitude.toFixed(6));
+        const lon = parseFloat(pos.coords.longitude.toFixed(6));
+        pendingGeo = { lat: String(lat), lon: String(lon) };
+        geoStatus  = 'ok';
+        resolve(pendingGeo);
+      },
+      () => {
+        resolve(null);
+      },
+      { timeout: 6000, maximumAge: 30000, enableHighAccuracy: true }
+    );
+  });
+}
+
+// ════════════════════════════════════════════════════════════
+// EXCEL EXPORT (SheetJS)
+// ════════════════════════════════════════════════════════════
+function xlsxDownload(filename, headers, rows) {
+  const wsData = [headers, ...rows];
+  const ws = XLSX.utils.aoa_to_sheet(wsData);
+  const colWidths = headers.map((h, i) => ({
+    wch: Math.max(h.length, ...rows.map(r => String(r[i]||'').length), 10)
+  }));
+  ws['!cols'] = colWidths;
+  const wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, ws, 'Datos');
+  XLSX.writeFile(wb, filename);
+  toast('Archivo exportado', 'success');
+}
+
+// ════════════════════════════════════════════════════════════
+// API CALL — JSONP para evitar CORS
+// ════════════════════════════════════════════════════════════
+function apiCall(params) {
+  return new Promise((resolve, reject) => {
+    const callbackName = 'cb_' + Date.now() + '_' + Math.floor(Math.random()*10000);
+    const timeout = setTimeout(() => {
+      delete window[callbackName];
+      if (script.parentNode) script.parentNode.removeChild(script);
+      reject(new Error('Timeout'));
+    }, 20000);
+
+    window[callbackName] = function(data) {
+      clearTimeout(timeout);
+      delete window[callbackName];
+      if (script.parentNode) script.parentNode.removeChild(script);
+      resolve(data);
+    };
+
+    const encoded = encodeURIComponent(JSON.stringify(params));
+    const script = document.createElement('script');
+    script.src = API_URL + '?callback=' + callbackName + '&payload=' + encoded + '&t=' + Date.now();
+    script.onerror = () => {
+      clearTimeout(timeout);
+      delete window[callbackName];
+      reject(new Error('Script load error'));
+    };
+    document.head.appendChild(script);
+  });
+}
+
+// ════════════════════════════════════════════════════════════
+// SCREENS
+// ════════════════════════════════════════════════════════════
+function showScreen(id) {
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+}
+
+// ════════════════════════════════════════════════════════════
+// LOADING / TOAST
+// ════════════════════════════════════════════════════════════
+function showLoading(text = 'Procesando...') {
+  document.getElementById('loadingText').textContent = text;
+  document.getElementById('loadingOverlay').classList.add('show');
+}
+function hideLoading() {
+  document.getElementById('loadingOverlay').classList.remove('show');
+}
+function toast(msg, type = 'info') {
+  const icons = { success: '✅', error: '❌', info: 'ℹ️' };
+  const el = document.createElement('div');
+  el.className = `toast toast-${type}`;
+  el.innerHTML = `<span>${icons[type]||'ℹ️'}</span><span>${msg}</span>`;
+  el.onclick = () => el.remove();
+  document.getElementById('toastContainer').appendChild(el);
+  setTimeout(() => el.remove(), 4500);
+}
+
+// ════════════════════════════════════════════════════════════
+// TOTP HELPERS
+// ════════════════════════════════════════════════════════════
+function generateBase32Secret() {
+  const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ234567';
+  let s = '';
+  const arr = new Uint8Array(20);
+  crypto.getRandomValues(arr);
+  arr.forEach(b => s += chars[b % 32]);
+  return s;
+}
+
+function generateOTPAuthURL(secret, username, issuer = 'COMCESA') {
+  return `otpauth://totp/${encodeURIComponent(issuer)}:${encodeURIComponent(username)}?secret=${secret}&issuer=${encodeURIComponent(issuer)}&algorithm=SHA1&digits=6&period=30`;
+}
+
+// ════════════════════════════════════════════════════════════
+// RELOJ
+// ════════════════════════════════════════════════════════════
+function startClock() {
+  if (clockInterval) clearInterval(clockInterval);
+  function tick() {
+    const now = getGTTime();
+    const hh = String(now.getHours()).padStart(2,'0');
+    const mm = String(now.getMinutes()).padStart(2,'0');
+    const ss = String(now.getSeconds()).padStart(2,'0');
+    document.getElementById('clockTime').textContent = `${hh}:${mm}:${ss}`;
+    const days = ['Domingo','Lunes','Martes','Miércoles','Jueves','Viernes','Sábado'];
+    const months = ['enero','febrero','marzo','abril','mayo','junio','julio','agosto','septiembre','octubre','noviembre','diciembre'];
+    document.getElementById('clockDate').textContent =
+      `${days[now.getDay()]}, ${now.getDate()} de ${months[now.getMonth()]} de ${now.getFullYear()}`;
+    document.getElementById('empTodayDate').textContent = formatDate(now);
+  }
+  tick();
+  clockInterval = setInterval(tick, 1000);
+}
+
+function getGTTime() {
+  const now = new Date();
+  const utc = now.getTime() + now.getTimezoneOffset() * 60000;
+  return new Date(utc + (-6 * 3600000));
+}
+
+function formatDate(d) {
+  return `${String(d.getDate()).padStart(2,'0')}/${String(d.getMonth()+1).padStart(2,'0')}/${d.getFullYear()}`;
+}
+
+function formatDateInput(d) {
+  return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+}
+
+// ════════════════════════════════════════════════════════════
+// LOGIN FLOW
+// ════════════════════════════════════════════════════════════
+document.getElementById('btnLogin').addEventListener('click', async () => {
+  const username = document.getElementById('loginUsername').value.trim().toLowerCase();
+  if (!username) { toast('Ingresa tu usuario', 'error'); return; }
+
+  showLoading('Buscando usuario...');
+  try {
+    const res = await apiCall({ action: 'getEmployee', username });
+    hideLoading();
+    if (!res.success) { toast('Usuario no encontrado. Verifica tu username.', 'error'); return; }
+    currentEmployee = res.employee;
+    if (!currentEmployee.totp_secret) {
+      const secret = generateBase32Secret();
+      currentEmployee._pendingSecret = secret;
+      showTOTPSetup(secret);
+    } else {
+      showTOTPVerify();
+    }
+  } catch(e) {
+    hideLoading();
+    toast('Error de conexión. Intenta de nuevo.', 'error');
+  }
+});
+
+document.getElementById('loginUsername').addEventListener('keydown', e => {
+  if (e.key === 'Enter') document.getElementById('btnLogin').click();
+});
+
+// ════════════════════════════════════════════════════════════
+// TOTP SETUP
+// ════════════════════════════════════════════════════════════
+function showTOTPSetup(secret) {
+  document.getElementById('secretDisplay').textContent = secret;
+  const qrDiv = document.getElementById('qrcode');
+  qrDiv.innerHTML = '';
+  const otpURL = generateOTPAuthURL(secret, currentEmployee.username);
+  new QRCode(qrDiv, { text: otpURL, width: 200, height: 200, colorDark: '#0d1f3c', colorLight: '#ffffff', correctLevel: QRCode.CorrectLevel.M });
+  showScreen('screen-totp-setup');
+  document.getElementById('setupTotpCode').value = '';
+  document.getElementById('setupTotpCode').focus();
+}
+
+document.getElementById('btnVerifySetup').addEventListener('click', async () => {
+  const code = document.getElementById('setupTotpCode').value.trim();
+  if (code.length !== 6) { toast('El código debe tener 6 dígitos', 'error'); return; }
+  showLoading('Guardando configuración...');
+  try {
+    await apiCall({ action: 'saveSecret', username: currentEmployee.username, secret: currentEmployee._pendingSecret });
+    const res = await apiCall({ action: 'verifyTOTP', username: currentEmployee.username, token: code });
+    hideLoading();
+    if (res.success) {
+      currentEmployee = res.employee;
+      toast('¡Autenticador configurado correctamente!', 'success');
+      enterDashboard();
+    } else {
+      toast('Código incorrecto. Verifica que escaneaste el QR y vuelve a intentar.', 'error');
+    }
+  } catch(e) { hideLoading(); toast('Error de conexión', 'error'); }
+});
+
+document.getElementById('setupTotpCode').addEventListener('keydown', e => {
+  if (e.key === 'Enter') document.getElementById('btnVerifySetup').click();
+});
+document.getElementById('btnSetupBack').addEventListener('click', () => {
+  currentEmployee = null;
+  document.getElementById('loginUsername').value = '';
+  showScreen('screen-login');
+});
+
+// ════════════════════════════════════════════════════════════
+// TOTP VERIFY
+// ════════════════════════════════════════════════════════════
+function showTOTPVerify() {
+  document.getElementById('verifyName').textContent = currentEmployee.nombre;
+  document.getElementById('verifyTotpCode').value = '';
+  showScreen('screen-totp-verify');
+  setTimeout(() => document.getElementById('verifyTotpCode').focus(), 200);
+}
+
+document.getElementById('btnVerifyLogin').addEventListener('click', async () => {
+  const code = document.getElementById('verifyTotpCode').value.trim();
+  if (code.length !== 6) { toast('El código debe tener 6 dígitos', 'error'); return; }
+  showLoading('Verificando...');
+  try {
+    const res = await apiCall({ action: 'verifyTOTP', username: currentEmployee.username, token: code });
+    hideLoading();
+    if (res.success) {
+      currentEmployee = res.employee;
+      enterDashboard();
+    } else {
+      toast('Código incorrecto o expirado. Intenta con el código actual de tu app.', 'error');
+    }
+  } catch(e) { hideLoading(); toast('Error de conexión', 'error'); }
+});
+
+document.getElementById('verifyTotpCode').addEventListener('keydown', e => {
+  if (e.key === 'Enter') document.getElementById('btnVerifyLogin').click();
+});
+document.getElementById('btnVerifyBack').addEventListener('click', () => {
+  currentEmployee = null;
+  document.getElementById('loginUsername').value = '';
+  showScreen('screen-login');
+});
+
+// ════════════════════════════════════════════════════════════
+// ENTER DASHBOARD
+// ════════════════════════════════════════════════════════════
+function enterDashboard() {
+  if (currentEmployee.es_admin) {
+    showAdminDashboard();
+  } else {
+    showEmployeeDashboard();
+  }
+}
+
+// ════════════════════════════════════════════════════════════
+// EMPLOYEE DASHBOARD
+// ════════════════════════════════════════════════════════════
+function showEmployeeDashboard() {
+  const emp = currentEmployee;
+  const initials = emp.nombre.split(' ').slice(0,2).map(n=>n[0]).join('').toUpperCase();
+  document.getElementById('empAvatar').textContent = initials;
+  document.getElementById('empHeaderName').textContent = emp.nombre;
+
+  const gt = getGTTime();
+  const isFriday = gt.getDay() === 5;
+  const salida = isFriday ? emp.hora_salida_v : emp.hora_salida_lj;
+  document.getElementById('empSchedule').textContent = `${emp.hora_entrada} — ${salida}`;
+  document.getElementById('empDayType').textContent = isFriday ? '📅 Viernes' : '📅 Lun – Jue';
+
+  const monday = getMonday(gt);
+  const sunday = new Date(monday); sunday.setDate(monday.getDate()+6);
+  document.getElementById('weekRange').textContent =
+    `Semana del ${formatDate(monday)} al ${formatDate(sunday)}`;
+
+  showScreen('screen-employee');
+  document.querySelectorAll('.emp-sidebar-item').forEach(b => b.classList.remove('active'));
+  document.querySelector('.emp-sidebar-item[data-emp-tab="inicio"]').classList.add('active');
+  document.querySelectorAll('.emp-tab-content').forEach(t => t.classList.remove('active'));
+  document.getElementById('emp-tab-inicio').classList.add('active');
+
+  startClock();
+  loadTodayHistory();
+  loadWeeklyHours();
+  // Iniciar geo en background (sin mostrar indicador al empleado)
+  iniciarGeoWatch();
+}
+
+function getMonday(d) {
+  const day = d.getDay();
+  const diff = day === 0 ? -6 : 1 - day;
+  const m = new Date(d);
+  m.setDate(d.getDate() + diff);
+  m.setHours(0,0,0,0);
+  return m;
+}
+
+async function loadTodayHistory() {
+  try {
+    const gt = getGTTime();
+    const today = formatDate(gt);
+    const res = await apiCall({ action: 'getMyAttendance', username: currentEmployee.username, fecha: today });
+    if (res.success) renderTodayHistory(res.registros);
+  } catch(e) { console.error(e); }
+}
+
+function actualizarEstadoBotones(registros) {
+  const btnE = document.getElementById('btnEntrada');
+  const btnS = document.getElementById('btnSalida');
+  const tieneEntrada = registros.some(r => r.tipo === 'ENTRADA');
+  const tieneSalida  = registros.some(r => r.tipo === 'SALIDA');
+
+  if (tieneEntrada) {
+    btnE.disabled = true;
+    btnE.style.opacity = '0.45';
+    btnE.style.cursor  = 'not-allowed';
+    btnE.title = 'Ya registraste tu entrada hoy';
+  } else {
+    btnE.disabled = false;
+    btnE.style.opacity = '';
+    btnE.style.cursor  = '';
+    btnE.title = '';
+  }
+
+  if (tieneSalida && !_salidaLock) {
+    _salidaLock = true;
+    setTimeout(() => { _salidaLock = false; }, 60000);
+  }
+}
+
+function renderTodayHistory(registros) {
+  const container = document.getElementById('empTodayHistory');
+  actualizarEstadoBotones(registros || []);
+  if (!registros || !registros.length) {
+    container.innerHTML = '<div class="empty-state"><span class="empty-icon animate-pulse">📋</span><div class="empty-text">No hay registros hoy</div></div>';
+    return;
+  }
+
+  container.innerHTML = registros.map(r => {
+    const isEntrada = r.tipo === 'ENTRADA';
+    const statusBadge = r.status === 'A_TIEMPO'
+      ? '<span class="badge badge-success">✓ A tiempo</span>'
+      : r.status === 'TARDE'
+      ? `<span class="badge badge-warn">⚠ Tarde ${formatMinutes(r.minutos_diferencia)}</span>`
+      : `<span class="badge badge-danger">⚠ Anticip. ${formatMinutes(r.minutos_diferencia)}</span>`;
+
+    // Ubicación solo visible para administrador
+    const geoLink = '';
+
+    return `
+      <div class="history-item">
+        <div class="history-dot ${isEntrada?'dot-entrada':'dot-salida'}">${isEntrada?'🟢':'🔴'}</div>
+        <div class="history-info">
+          <div class="history-type ${isEntrada?'history-tipo-entrada':'history-tipo-salida'}">${r.tipo}</div>
+          <div class="history-time">${r.fecha_hora}</div>
+          ${r.justificacion ? `<div class="history-time" style="color:var(--gray-500);font-style:italic;">"${r.justificacion}"</div>` : ''}
+          ${geoLink}
+        </div>
+        <div class="history-status">${statusBadge}</div>
+      </div>`;
+  }).join('');
+}
+
+async function loadWeeklyHours() {
+  try {
+    const res = await apiCall({ action: 'getWeeklyHours', username_filter: currentEmployee.username });
+    if (res.success && res.semanas.length) {
+      const gt = getGTTime();
+      const monday = getMonday(gt);
+      const semIni = formatDate(monday);
+      const current = res.semanas.find(s => s.semana_inicio === semIni) || res.semanas[res.semanas.length-1];
+      if (current) {
+        const hrs = parseFloat(current.horas_trabajadas) || 0;
+        document.getElementById('weekHours').textContent = hrs.toFixed(1);
+        const pct = Math.min((hrs / 44) * 100, 100);
+        document.getElementById('hoursBar').style.width = pct + '%';
+      }
+    }
+  } catch(e) { console.error(e); }
+}
+
+// Employee sidebar tabs
+document.querySelectorAll('.emp-sidebar-item[data-emp-tab]').forEach(btn => {
+  btn.addEventListener('click', async () => {
+    document.querySelectorAll('.emp-sidebar-item').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    const tab = btn.dataset.empTab;
+    document.querySelectorAll('.emp-tab-content').forEach(t => t.classList.remove('active'));
+    document.getElementById('emp-tab-' + tab).classList.add('active');
+    if (tab === 'historial') { initEmpHistorial(); await loadFullHistory(); }
+    if (tab === 'horas')     await loadEmpHoras();
+  });
+});
+
+let empHistorialInited = false;
+function initEmpHistorial() {
+  if (empHistorialInited) return;
+  empHistorialInited = true;
+
+  document.getElementById('empHistorialPeriod').addEventListener('change', function() {
+    document.getElementById('empCustomRange').style.display = this.value === 'custom' ? 'flex' : 'none';
+  });
+
+  const gtNow = getGTTime();
+  document.getElementById('empFechaHasta').value = formatDateInput(gtNow);
+  document.getElementById('empFechaDesde').value = formatDateInput(getMonday(gtNow));
+
+  document.getElementById('btnEmpHistorialFilter').addEventListener('click', () => loadFullHistory());
+
+  document.getElementById('btnEmpExport').addEventListener('click', () => {
+    const data = window._empHistorialData;
+    if (!data || !data.length) { toast('No hay datos para exportar', 'error'); return; }
+    xlsxDownload(
+      `Historial_${currentEmployee.username}_${formatDate(getGTTime()).replace(/\//g,'-')}.xlsx`,
+      ['Tipo', 'Fecha y Hora', 'Estado', 'Minutos diferencia', 'Justificacion', 'Latitud', 'Longitud'],
+      data.map(r => [r.tipo, r.fecha_hora, r.status, r.minutos_diferencia||0, r.justificacion||'', r.lat||'', r.lon||''])
+    );
+  });
+}
+
+async function loadFullHistory() {
+  const c = document.getElementById('empFullHistory');
+  c.innerHTML = '<div class="empty-state"><div class="empty-text animate-pulse">Cargando...</div></div>';
+
+  const period = document.getElementById('empHistorialPeriod').value;
+  const gt = getGTTime();
+  let desde = null, hasta = null;
+
+  if (period === 'today') {
+    desde = hasta = formatDate(gt);
+  } else if (period === 'week') {
+    const mon = getMonday(gt);
+    const sun = new Date(mon); sun.setDate(mon.getDate()+6);
+    desde = formatDate(mon); hasta = formatDate(sun);
+  } else if (period === 'last_week') {
+    const mon = getMonday(gt); mon.setDate(mon.getDate()-7);
+    const sun = new Date(mon); sun.setDate(mon.getDate()+6);
+    desde = formatDate(mon); hasta = formatDate(sun);
+  } else if (period === 'month') {
+    const m = new Date(gt.getFullYear(), gt.getMonth(), 1);
+    const last = new Date(gt.getFullYear(), gt.getMonth()+1, 0);
+    desde = formatDate(m); hasta = formatDate(last);
+  } else if (period === 'last_month') {
+    const m = new Date(gt.getFullYear(), gt.getMonth()-1, 1);
+    const last = new Date(gt.getFullYear(), gt.getMonth(), 0);
+    desde = formatDate(m); hasta = formatDate(last);
+  } else if (period === 'custom') {
+    const d = document.getElementById('empFechaDesde').value;
+    const h = document.getElementById('empFechaHasta').value;
+    if (d) { const [y,mo,da]=d.split('-'); desde=`${da}/${mo}/${y}`; }
+    if (h) { const [y,mo,da]=h.split('-'); hasta=`${da}/${mo}/${y}`; }
+  }
+
+  try {
+    const res = await apiCall({ action: 'getMyAttendance', username: currentEmployee.username });
+    if (!res.success) { c.innerHTML = '<div class="empty-state"><div class="empty-text">Error al cargar</div></div>'; return; }
+
+    let data = res.registros;
+
+    if (desde || hasta) {
+      const parseDate = str => { const p=str.split(' ')[0].split('/'); return new Date(+p[2],+p[1]-1,+p[0]); };
+      const d1 = desde ? (() => { const p=desde.split('/'); return new Date(+p[2],+p[1]-1,+p[0]); })() : null;
+      const d2 = hasta ? (() => { const p=hasta.split('/'); return new Date(+p[2],+p[1]-1,+p[0]); })() : null;
+      data = data.filter(r => {
+        const d = parseDate(r.fecha_hora);
+        if (d1 && d < d1) return false;
+        if (d2 && d > d2) return false;
+        return true;
+      });
+    }
+
+    window._empHistorialData = data;
+
+    if (!data.length) {
+      c.innerHTML = '<div class="empty-state"><div class="empty-text">Sin registros en este período</div></div>'; return;
+    }
+
+    const byDay = {};
+    [...data].sort((a,b) => a.id - b.id).forEach(r => {
+      const day = r.fecha_hora.split(' ')[0];
+      if (!byDay[day]) byDay[day] = [];
+      byDay[day].push(r);
+    });
+
+    const diasCorregidos = new Set(
+      Object.entries(byDay)
+        .filter(([,recs]) => recs.some(r => r.tipo === 'SALIDA' && r.es_manual))
+        .map(([day]) => day)
+    );
+
+    const todayStr = formatDate(getGTTime());
+    const diasSinSalida = Object.entries(byDay)
+      .filter(([day, recs]) =>
+        day !== todayStr &&
+        !diasCorregidos.has(day) &&
+        recs[recs.length-1].tipo === 'ENTRADA'
+      )
+      .map(([day]) => day);
+
+    const rangeLabel = desde && hasta ? ` — ${desde} al ${hasta}` : desde ? ` — desde ${desde}` : '';
+    c.innerHTML = `
+      <div style="padding:12px 20px;border-bottom:1px solid var(--gray-100);">
+        <span style="font-size:.8rem;color:var(--gray-500);">${data.length} registro${data.length!==1?'s':''}${rangeLabel}</span>
+      </div>
+      ${data.map(r => {
+        const isEntrada = r.tipo === 'ENTRADA';
+        const statusBadge = r.status === 'A_TIEMPO'
+          ? '<span class="badge badge-success">✓ A tiempo</span>'
+          : r.status === 'TARDE'
+          ? `<span class="badge badge-warn">⚠ Tarde ${formatMinutes(r.minutos_diferencia)}</span>`
+          : `<span class="badge badge-danger">⚠ Anticip. ${formatMinutes(r.minutos_diferencia)}</span>`;
+
+        const dayKey = r.fecha_hora.split(' ')[0];
+        const hora   = r.fecha_hora.split(' ')[1] || '';
+        const esHuerfana = diasSinSalida.includes(dayKey)
+          && r.tipo === 'ENTRADA'
+          && byDay[dayKey][byDay[dayKey].length-1].id === r.id;
+        const esCorregida = r.tipo === 'SALIDA' && r.es_manual;
+
+        // Ubicación solo visible para administrador - no mostrar al empleado
+        const geoLink = '';
+
+        const alertCard = esHuerfana
+          ? `<div style="display:flex;align-items:center;gap:10px;background:#fff7ed;border:1.5px solid #f97316;border-radius:var(--radius);padding:10px 16px;margin:8px 0 0 0;">
+               <span style="font-size:1.1rem;">⚠️</span>
+               <div style="font-size:.83rem;color:#9a3412;line-height:1.4;">
+                 <strong>Salida no registrada</strong><br>
+                 El ${dayKey} marcaste entrada a las <strong>${hora}</strong> pero nunca registraste tu salida.<br>
+                 <span style="color:#c2410c;">Contacta a tu administrador para corregirlo.</span>
+               </div>
+             </div>`
+          : '';
+
+        const correctedBadge = esCorregida
+          ? `<span style="font-size:.72rem;background:#f0fdf4;color:#166534;border:1px solid #bbf7d0;padding:2px 8px;border-radius:999px;font-weight:600;margin-left:6px;">✓ Corregido por administrador</span>`
+          : '';
+
+        return `${alertCard}<div class="history-item" ${esHuerfana ? 'style="border-left:3px solid #f97316;"' : esCorregida ? 'style="border-left:3px solid #22c55e;"' : ''}>
+          <div class="history-dot ${isEntrada?'dot-entrada':'dot-salida'}">${isEntrada?'🟢':'🔴'}</div>
+          <div class="history-info">
+            <div class="history-type ${isEntrada?'history-tipo-entrada':'history-tipo-salida'}">${r.tipo}${correctedBadge}${geoLink}</div>
+            <div class="history-time">${r.fecha_hora}</div>
+            ${r.justificacion && !r.es_manual ? `<div class="history-time" style="color:var(--gray-500);font-style:italic;">"${r.justificacion}"</div>` : ''}
+          </div>
+          <div class="history-status">${statusBadge}</div>
+        </div>`;
+      }).join('')}`;
+  } catch(e) { c.innerHTML = '<div class="empty-state"><div class="empty-text">Error al cargar</div></div>'; }
+}
+
+// ════════════════════════════════════════════════════════════
+// MIS HORAS — EMPLEADO (con tarjetas resumen)
+// ════════════════════════════════════════════════════════════
+let empVistaHoras = 'semana';
+
+function switchEmpVista(vista) {
+  empVistaHoras = vista;
+  const btnS = document.getElementById('empBtnSemana');
+  const btnM = document.getElementById('empBtnMes');
+  if (vista === 'semana') {
+    btnS.style.background='var(--white)'; btnS.style.color='var(--navy)'; btnS.style.boxShadow='0 1px 4px rgba(0,0,0,.1)';
+    btnM.style.background='transparent'; btnM.style.color='var(--gray-500)'; btnM.style.boxShadow='none';
+  } else {
+    btnM.style.background='var(--white)'; btnM.style.color='var(--navy)'; btnM.style.boxShadow='0 1px 4px rgba(0,0,0,.1)';
+    btnS.style.background='transparent'; btnS.style.color='var(--gray-500)'; btnS.style.boxShadow='none';
+  }
+  // Re-renderizar con los datos actuales si existen
+  if (window._empHorasData) renderEmpHorasData(window._empHorasData);
+}
+
+async function loadEmpHoras() {
+  const c = document.getElementById('empHorasTable');
+  c.innerHTML = '<div class="empty-state"><div class="empty-text animate-pulse">Cargando...</div></div>';
+
+  const period = document.getElementById('empHorasPeriod').value;
+  const gt = getGTTime();
+  const parseDD = str => { const p=(str||'').split('/'); return p.length===3?new Date(+p[2],+p[1]-1,+p[0]):null; };
+
+  try {
+    const res = await apiCall({ action: 'getWeeklyHours', username_filter: currentEmployee.username });
+    if (!res.success) { c.innerHTML = '<div class="empty-state"><div class="empty-text">Error al cargar</div></div>'; return; }
+
+    const seen = {};
+    const deduped = [];
+    res.semanas.forEach(r => {
+      const key = `${r.username}__${r.semana_inicio}`;
+      if (!seen[key]) { seen[key] = true; deduped.push(r); }
+    });
+
+    let filtered = deduped;
+    if (period === 'this_month') {
+      filtered = deduped.filter(r => { const d=parseDD(r.semana_inicio); return d && d.getMonth()===gt.getMonth() && d.getFullYear()===gt.getFullYear(); });
+    } else if (period === 'last_month') {
+      const lm = new Date(gt.getFullYear(), gt.getMonth()-1, 1);
+      filtered = deduped.filter(r => { const d=parseDD(r.semana_inicio); return d && d.getMonth()===lm.getMonth() && d.getFullYear()===lm.getFullYear(); });
+    } else if (period === 'this_week') {
+      const mon = getMonday(gt); const sun = new Date(mon); sun.setDate(mon.getDate()+6);
+      filtered = deduped.filter(r => { const d=parseDD(r.semana_inicio); return d && d>=mon && d<=sun; });
+    } else if (period === 'last_week') {
+      const mon = getMonday(gt); mon.setDate(mon.getDate()-7);
+      const sun = new Date(mon); sun.setDate(mon.getDate()+6);
+      filtered = deduped.filter(r => { const d=parseDD(r.semana_inicio); return d && d>=mon && d<=sun; });
+    } else if (period.startsWith('week')) {
+      const wNum = parseInt(period.replace('week',''));
+      const mes  = parseInt(document.getElementById('empHorasMes')?.value||gt.getMonth()+1) - 1;
+      const anio = parseInt(document.getElementById('empHorasAnio')?.value||gt.getFullYear());
+      filtered = deduped.filter(r => {
+        const d = parseDD(r.semana_inicio);
+        if (!d || d.getMonth()!==mes || d.getFullYear()!==anio) return false;
+        const wk = d.getDate()<=7?1:d.getDate()<=14?2:d.getDate()<=21?3:4;
+        return wk === wNum;
+      });
+    } else if (period === 'custom_month') {
+      const mes  = parseInt(document.getElementById('empHorasMes').value);
+      const anio = parseInt(document.getElementById('empHorasAnio').value);
+      filtered = deduped.filter(r => { const d=parseDD(r.semana_inicio); return d && d.getMonth()+1===mes && d.getFullYear()===anio; });
+    }
+
+    window._empHorasData = filtered;
+    renderEmpHorasData(filtered);
+
+  } catch(e) { c.innerHTML = '<div class="empty-state"><div class="empty-text">Error al cargar</div></div>'; }
+}
+
+// Mostrar/ocultar selector de mes específico
+document.getElementById('empHorasPeriod').addEventListener('change', function() {
+  const show = this.value === 'custom_month' || this.value.startsWith('week');
+  document.getElementById('empHorasCustomMonth').style.display = show ? 'flex' : 'none';
+});
+
+function renderEmpHorasData(data) {
+  const c = document.getElementById('empHorasTable');
+  if (!data.length) {
+    // Limpiar tarjetas resumen
+    actualizarResumenCards(0, 0, 0);
+    c.innerHTML = '<div class="empty-state"><span class="empty-icon">📭</span><div class="empty-text">Sin datos en este período</div></div>';
+    return;
+  }
+
+  // ── CALCULAR Y ACTUALIZAR TARJETAS RESUMEN ──────────────
+  const totalHrs = data.reduce((s, r) => s + (parseFloat(r.horas_trabajadas)||0), 0);
+  const META_SEM = 44, META_MES = 176;
+  const metaTotal = empVistaHoras === 'semana' ? META_SEM * data.length : META_MES;
+  const pctTotal  = Math.min(Math.round((totalHrs / metaTotal) * 100), 100);
+  actualizarResumenCards(totalHrs, pctTotal, data.length);
+
+  if (empVistaHoras === 'semana') {
+    // ── VISTA SEMANA: tarjetas con barra de progreso ────────
+    c.innerHTML = `<div style="display:flex;flex-direction:column;gap:10px;padding:16px;">
+      ${data.map(r => {
+        const hrs  = parseFloat(r.horas_trabajadas) || 0;
+        const pct  = Math.min(Math.round((hrs / META_SEM) * 100), 100);
+        const color   = pct >= 100 ? '#16a34a' : pct >= 60 ? '#2563eb' : '#d97706';
+        const bgColor = pct >= 100 ? '#f0fdf4' : pct >= 60 ? '#eff6ff' : '#fffbeb';
+        const borderColor = pct >= 100 ? '#bbf7d0' : pct >= 60 ? '#bfdbfe' : '#fde68a';
+        const icon    = pct >= 100 ? '🏆' : pct >= 60 ? '📈' : '⏳';
+        const label   = pct >= 100 ? 'Meta cumplida' : pct >= 60 ? 'En progreso' : 'Por completar';
+        const faltanHrs = Math.max(META_SEM - hrs, 0);
+        const faltanLabel = pct >= 100 ? '¡Meta alcanzada!' : `Faltan ${faltanHrs.toFixed(1)} hrs`;
+
+        const [d1,m1,y1] = r.semana_inicio.split('/');
+        const [d2,m2   ] = r.semana_fin.split('/');
+        const meses = ['','Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic'];
+        const weekLabel = `${d1} ${meses[+m1]} — ${d2} ${meses[+m2]} ${y1}`;
+
+        return `
+        <div style="background:${bgColor};border:1.5px solid ${borderColor};border-radius:14px;padding:16px 20px;display:flex;align-items:center;gap:20px;transition:all .2s;">
+          <!-- Número grande -->
+          <div style="min-width:80px;text-align:center;flex-shrink:0;">
+            <div style="font-size:2rem;font-weight:800;color:${color};font-family:'DM Mono',monospace;line-height:1;">${hrs.toFixed(1)}</div>
+            <div style="font-size:.65rem;color:#6b7280;font-weight:600;margin-top:2px;">/ ${META_SEM} hrs</div>
+          </div>
+          <!-- Divisor -->
+          <div style="width:1px;height:48px;background:${borderColor};flex-shrink:0;"></div>
+          <!-- Info + barra -->
+          <div style="flex:1;min-width:0;">
+            <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px;">
+              <div style="font-size:.85rem;font-weight:700;color:#1e293b;">📅 ${weekLabel}</div>
+              <span style="font-size:.72rem;font-weight:700;background:${bgColor};color:${color};border:1px solid ${borderColor};padding:2px 8px;border-radius:999px;">${icon} ${label}</span>
+            </div>
+            <div style="display:flex;align-items:center;gap:10px;">
+              <div style="flex:1;height:8px;background:#e5e7eb;border-radius:999px;overflow:hidden;">
+                <div style="width:${pct}%;height:100%;background:${color};border-radius:999px;transition:width .5s;"></div>
+              </div>
+              <span style="font-size:.8rem;font-weight:800;color:${color};min-width:36px;text-align:right;">${pct}%</span>
+            </div>
+            <div style="font-size:.72rem;color:${color};font-weight:500;margin-top:4px;">${faltanLabel}</div>
+          </div>
+        </div>`;
+      }).join('')}
+    </div>`;
+
+  } else {
+    // ── VISTA MES: tarjetas en grid ─────────────────────────
+    const monthNames = ['','Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
+    const groups = {};
+    data.forEach(r => {
+      const p = (r.semana_inicio || '').split('/');
+      if (p.length < 3) return;
+      const mes = +p[1], anio = +p[2];
+      const key = `${anio}__${mes}`;
+      if (!groups[key]) groups[key] = { mes, anio, horasRaw: 0 };
+      groups[key].horasRaw += parseFloat(r.horas_trabajadas) || 0;
+    });
+
+    const rows = Object.values(groups).sort((a, b) => b.anio - a.anio || b.mes - a.mes);
+
+    c.innerHTML = `<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:14px;padding:16px;">
+      ${rows.map(r => {
+        const hrs     = r.horasRaw;
+        const pct     = Math.min(Math.round((hrs / META_MES) * 100), 100);
+        const color   = pct >= 100 ? '#16a34a' : pct >= 60 ? '#2563eb' : '#d97706';
+        const bgColor = pct >= 100 ? '#f0fdf4' : pct >= 60 ? '#eff6ff' : '#fffbeb';
+        const borderColor = pct >= 100 ? '#bbf7d0' : pct >= 60 ? '#bfdbfe' : '#fde68a';
+        const icon    = pct >= 100 ? '🏆' : pct >= 60 ? '📈' : '⏳';
+        const faltanHrs   = Math.max(META_MES - hrs, 0);
+        const faltanLabel = pct >= 100 ? '¡Meta alcanzada!' : `Faltan ${faltanHrs.toFixed(1)} hrs`;
+
+        return `
+        <div style="background:${bgColor};border:1.5px solid ${borderColor};border-radius:16px;padding:20px;display:flex;flex-direction:column;gap:12px;">
+          <div style="display:flex;align-items:center;justify-content:space-between;">
+            <div>
+              <div style="font-size:.68rem;font-weight:700;color:#6b7280;text-transform:uppercase;letter-spacing:.5px;">${monthNames[r.mes]}</div>
+              <div style="font-size:.82rem;font-weight:600;color:#374151;">${r.anio}</div>
+            </div>
+            <span style="font-size:1.5rem;">${icon}</span>
+          </div>
+          <div style="text-align:center;">
+            <span style="font-size:2.4rem;font-weight:900;color:${color};font-family:'DM Mono',monospace;line-height:1;">${hrs.toFixed(1)}</span>
+            <span style="font-size:.8rem;color:#6b7280;font-weight:500;"> / ${META_MES} hrs</span>
+          </div>
+          <div>
+            <div style="height:8px;background:#e5e7eb;border-radius:999px;overflow:hidden;margin-bottom:6px;">
+              <div style="width:${pct}%;height:100%;background:${color};border-radius:999px;transition:width .5s;"></div>
+            </div>
+            <div style="display:flex;justify-content:space-between;align-items:center;">
+              <span style="font-size:.7rem;color:${color};font-weight:600;">${faltanLabel}</span>
+              <span style="font-size:.8rem;font-weight:800;color:${color};">${pct}%</span>
+            </div>
+          </div>
+        </div>`;
+      }).join('')}
+    </div>`;
+  }
+}
+
+function actualizarResumenCards(totalHrs, pctTotal, numPeriodos) {
+  const color = pctTotal >= 100 ? '#16a34a' : pctTotal >= 60 ? '#2563eb' : '#d97706';
+  const resumenEl = document.getElementById('empHorasResumen');
+  if (!resumenEl) return;
+  const periodoLabel = empVistaHoras === 'semana' ? 'semanas' : 'meses';
+  resumenEl.innerHTML = `
+    <div class="horas-resumen-card">
+      <div class="horas-resumen-label">Total horas</div>
+      <div class="horas-resumen-valor" style="color:${color};">${typeof totalHrs === 'number' ? totalHrs.toFixed(1) : '—'}</div>
+      <div class="horas-resumen-sub">hrs trabajadas</div>
+    </div>
+    <div class="horas-resumen-card">
+      <div class="horas-resumen-label">Progreso</div>
+      <div class="horas-resumen-valor" style="color:${color};">${pctTotal}%</div>
+      <div class="horas-mini-bar"><div class="horas-mini-bar-fill" style="width:${pctTotal}%;background:${color};"></div></div>
+    </div>
+    <div class="horas-resumen-card">
+      <div class="horas-resumen-label">Períodos</div>
+      <div class="horas-resumen-valor" style="color:var(--navy);">${numPeriodos}</div>
+      <div class="horas-resumen-sub">${periodoLabel}</div>
+    </div>`;
+}
+
+function formatMinutes(mins) {
+  const m = Math.abs(parseInt(mins)||0);
+  if (m < 60) return `${m} min`;
+  const h = Math.floor(m/60), r = m%60;
+  return r ? `${h}h ${r}min` : `${h}h`;
+}
+
+// ════════════════════════════════════════════════════════════
+// REGISTRO DE ASISTENCIA
+// ════════════════════════════════════════════════════════════
+async function handleAttendance(tipo) {
+  const emp = currentEmployee;
+  const gt  = getGTTime();
+  const isFriday = gt.getDay() === 5;
+  const salida = isFriday ? emp.hora_salida_v : emp.hora_salida_lj;
+
+  const [eH, eM] = emp.hora_entrada.split(':').map(Number);
+  const [sH, sM] = salida.split(':').map(Number);
+  const minutosActuales = gt.getHours()*60 + gt.getMinutes();
+  const minutosEntrada  = eH*60 + eM;
+  const minutosSalida   = sH*60 + sM;
+
+  // Refrescar ubicación justo antes de registrar
+  const geoActual = await refrescarGeo();
+  pendingGeo = geoActual;
+
+  if (tipo === 'entrada') {
+    const dif = minutosActuales - minutosEntrada;
+    if (dif > 5) {
+      pendingAction = { tipo, minutosDif: dif };
+      document.getElementById('tardanzaInfo').textContent =
+        `Estás llegando ${formatMinutes(dif)} tarde (hora programada: ${emp.hora_entrada})`;
+      document.getElementById('tardanzaJustif').value = '';
+      document.getElementById('modalTardanza').classList.add('open');
+      return;
+    }
+  } else {
+    const dif = minutosSalida - minutosActuales;
+    if (dif > 10) {
+      pendingAction = { tipo, minutosDif: dif };
+      document.getElementById('salidaInfo').textContent =
+        `Estás saliendo ${formatMinutes(dif)} antes (hora programada: ${salida})`;
+      document.getElementById('salidaJustif').value = '';
+      document.getElementById('modalSalidaAnticipada').classList.add('open');
+      return;
+    }
+  }
+
+  await doRegisterAttendance(tipo, '');
+}
+
+async function doRegisterAttendance(tipo, justificacion) {
+  showLoading(`Registrando ${tipo}...`);
+  try {
+    const payload = {
+      action: 'registerAttendance',
+      username: currentEmployee.username,
+      tipo,
+      justificacion
+    };
+
+    if (pendingGeo && pendingGeo.lat && pendingGeo.lon) {
+      payload.lat = String(pendingGeo.lat);
+      payload.lon = String(pendingGeo.lon);
+    }
+    pendingGeo = null;
+
+    const res = await apiCall(payload);
+    hideLoading();
+    if (res.success) {
+      const r = res.registro;
+      const esATiempo = r.status === 'A_TIEMPO';
+      document.getElementById('successTitle').textContent = tipo === 'entrada' ? '✅ Entrada registrada' : '✅ Salida registrada';
+      document.getElementById('successBody').innerHTML =
+        `<strong>${currentEmployee.nombre}</strong><br>
+         ${r.fecha_hora}<br><br>
+         Estado: ${esATiempo
+           ? '<span style="color:var(--success);font-weight:700;">A tiempo ✓</span>'
+           : r.status === 'TARDE'
+           ? `<span style="color:var(--warn);font-weight:700;">Tardanza ⚠️ (${formatMinutes(r.minutos_diferencia)})</span>`
+           : `<span style="color:var(--danger);font-weight:700;">Salida anticipada ⚠️ (${formatMinutes(r.minutos_diferencia)} antes)</span>`
+         }`;
+
+
+
+      document.getElementById('modalSuccess').classList.add('open');
+      loadTodayHistory();
+      loadWeeklyHours();
+    } else {
+      toast('Error al registrar: ' + (res.error||''), 'error');
+    }
+  } catch(e) {
+    hideLoading();
+    toast('Error de conexión', 'error');
+    console.error(e);
+  }
+}
+
+// Botones de acción
+let _salidaLock = false;
+let _entradaLock = false;
+document.getElementById('btnEntrada').addEventListener('click', async () => {
+  if (_entradaLock) { toast('Ya se está procesando tu entrada, espera un momento.', 'error'); return; }
+  _entradaLock = true;
+  const btnE = document.getElementById('btnEntrada');
+  btnE.disabled = true; btnE.style.opacity = '0.5'; btnE.style.cursor = 'not-allowed';
+  try {
+    await handleAttendance('entrada');
+  } finally {
+    setTimeout(() => {
+      _entradaLock = false;
+      // Solo restaurar si actualizarEstadoBotones no lo deshabilitó permanentemente
+      if (!btnE.title) { btnE.disabled = false; btnE.style.opacity = ''; btnE.style.cursor = ''; }
+    }, 5000);
+  }
+});
+document.getElementById('btnSalida').addEventListener('click', async () => {
+  if (_salidaLock) { toast('Ya registraste tu salida. Espera antes de intentar de nuevo.', 'error'); return; }
+  _salidaLock = true;
+  await handleAttendance('salida');
+  setTimeout(() => _salidaLock = false, 60000);
+});
+
+// Modal tardanza
+document.getElementById('btnTardanzaConfirm').addEventListener('click', async () => {
+  const j = document.getElementById('tardanzaJustif').value.trim();
+  if (!j) { toast('Debes ingresar una justificación', 'error'); return; }
+  document.getElementById('modalTardanza').classList.remove('open');
+  await doRegisterAttendance(pendingAction.tipo, j);
+  pendingAction = null;
+});
+document.getElementById('btnTardanzaCancel').addEventListener('click', () => {
+  document.getElementById('modalTardanza').classList.remove('open');
+  pendingAction = null;
+});
+
+// Modal salida anticipada
+document.getElementById('btnSalidaConfirm').addEventListener('click', async () => {
+  const j = document.getElementById('salidaJustif').value.trim();
+  if (!j) { toast('Debes ingresar una justificación', 'error'); return; }
+  document.getElementById('modalSalidaAnticipada').classList.remove('open');
+  await doRegisterAttendance(pendingAction.tipo, j);
+  pendingAction = null;
+});
+document.getElementById('btnSalidaCancel').addEventListener('click', () => {
+  document.getElementById('modalSalidaAnticipada').classList.remove('open');
+  pendingAction = null;
+});
+
+// Modal success
+document.getElementById('btnSuccessClose').addEventListener('click', () => {
+  document.getElementById('modalSuccess').classList.remove('open');
+});
+
+// Logout empleado
+document.getElementById('btnEmpLogout').addEventListener('click', () => {
+  currentEmployee = null;
+  pendingGeo = null;
+  geoStatus = 'waiting';
+  window._empHorasData = null;
+  if (clockInterval) clearInterval(clockInterval);
+  document.getElementById('loginUsername').value = '';
+  showScreen('screen-login');
+});
+
+// ════════════════════════════════════════════════════════════
+// ADMIN DASHBOARD
+// ════════════════════════════════════════════════════════════
+async function showAdminDashboard() {
+  showScreen('screen-admin');
+  const initials = currentEmployee.nombre.split(' ').slice(0,2).map(n=>n[0]).join('').toUpperCase();
+  document.getElementById('adminAvatar').textContent = initials;
+  document.getElementById('adminHeaderName').textContent = currentEmployee.nombre;
+  await loadAdminEmployeeFilters();
+  await loadAdminData();
+  await loadEmpList();
+  setAdminTab('asistencias');
+}
+
+async function loadAdminEmployeeFilters() {
+  try {
+    const res = await apiCall({ action: 'getEmployeeList' });
+    if (!res.success) return;
+    const emps = res.empleados.filter(e => !e.es_admin)
+      .sort((a, b) => a.nombre.localeCompare(b.nombre, 'es'));
+
+    window._adminEmpleados = {};
+    emps.forEach(e => { window._adminEmpleados[e.username] = e; });
+    const opts = emps.map(e => `<option value="${e.username}">${e.nombre}</option>`).join('');
+    document.getElementById('adminEmpFilter').innerHTML = '<option value="">Todos los empleados</option>' + opts;
+    document.getElementById('horasEmpFilter').innerHTML = '<option value="">Todos los empleados</option>' + opts;
+
+    const adminSearch = document.getElementById('adminEmpSearch');
+    adminSearch.addEventListener('input', function() {
+      const q = this.value.toLowerCase().trim();
+      const sel = document.getElementById('adminEmpFilter');
+      const match = emps.find(e => e.nombre.toLowerCase().includes(q) || e.username.toLowerCase().includes(q));
+      if (q === '') { sel.value = ''; }
+      else if (match) { sel.value = match.username; }
+    });
+    document.getElementById('adminEmpFilter').addEventListener('change', function() {
+      document.getElementById('adminEmpSearch').value = '';
+    });
+
+    const horasSearch = document.getElementById('horasEmpSearch');
+    horasSearch.addEventListener('input', function() {
+      const q = this.value.toLowerCase().trim();
+      const sel = document.getElementById('horasEmpFilter');
+      const match = emps.find(e => e.nombre.toLowerCase().includes(q) || e.username.toLowerCase().includes(q));
+      if (q === '') { sel.value = ''; }
+      else if (match) { sel.value = match.username; }
+    });
+    document.getElementById('horasEmpFilter').addEventListener('change', function() {
+      document.getElementById('horasEmpSearch').value = '';
+    });
+  } catch(e) {}
+}
+
+async function loadAdminData() {
+  try {
+    const gt = getGTTime();
+    const today = formatDate(gt);
+    const res = await apiCall({ action: 'getAllAttendance', fecha: today });
+    if (res.success) {
+      const total  = res.registros.length;
+      const onTime = res.registros.filter(r => r.status === 'A_TIEMPO').length;
+      const late   = res.registros.filter(r => r.status === 'TARDE').length;
+      const early  = res.registros.filter(r => r.status === 'SALIDA_ANTICIPADA').length;
+      document.getElementById('statTotal').textContent  = total;
+      document.getElementById('statOnTime').textContent = onTime;
+      document.getElementById('statLate').textContent   = late;
+      document.getElementById('statEarly').textContent  = early;
+      adminAttendanceData = res.registros;
+      renderAdminTable(res.registros);
+      document.getElementById('adminTableCount').textContent = `${total} resultado${total!==1?'s':''}`;
+    }
+  } catch(e) {}
+}
+
+function renderAdminTable(data) {
+  const tbody = document.getElementById('adminTableBody');
+  if (!data.length) {
+    tbody.innerHTML = '<tr><td colspan="8"><div class="empty-state"><span class="empty-icon">🔍</span><div class="empty-text">Sin resultados</div></div></td></tr>';
+    return;
+  }
+
+  const conSalida = new Set();
+  data.forEach(r => {
+    if (r.tipo === 'SALIDA') {
+      const day = r.fecha_hora.split(' ')[0];
+      conSalida.add(`${r.username}__${day}`);
+    }
+  });
+
+  tbody.innerHTML = data.map((r) => {
+    const statusEl = r.status === 'A_TIEMPO'
+      ? '<span class="badge badge-success">A tiempo</span>'
+      : r.status === 'TARDE'
+      ? '<span class="badge badge-warn">Tarde</span>'
+      : '<span class="badge badge-danger">Salida anticip.</span>';
+
+    let tipoEl = r.tipo === 'ENTRADA'
+      ? '<span class="badge badge-success">ENTRADA</span>'
+      : '<span class="badge badge-danger">SALIDA</span>';
+
+    if (r.es_manual) {
+      tipoEl += ' <span style="font-size:.68rem;background:#f0fdf4;color:#166534;border:1px solid #bbf7d0;padding:2px 6px;border-radius:999px;font-weight:600;">ADMIN</span>';
+    }
+
+    const difText = r.minutos_diferencia && parseInt(r.minutos_diferencia) > 0
+      ? `<span class="font-mono" style="color:var(--warn)">${formatMinutes(r.minutos_diferencia)}</span>`
+      : '<span class="text-muted">—</span>';
+
+    // Link de Google Maps con coordenadas validadas (solo en admin)
+    let geoEl = '<span class="text-muted" style="font-size:.8rem;">—</span>';
+    if (r.lat && r.lon && String(r.lat).trim() !== '' && String(r.lon).trim() !== '') {
+      const latClean = String(r.lat).trim();
+      const lonClean = String(r.lon).trim();
+      const latNum = parseFloat(latClean);
+      const lonNum = parseFloat(lonClean);
+      if (!isNaN(latNum) && !isNaN(lonNum) && Math.abs(latNum) <= 90 && Math.abs(lonNum) <= 180) {
+        const mapsUrl = `https://www.google.com/maps?q=${latNum},${lonNum}`;
+        geoEl = `<a href="${mapsUrl}" target="_blank"
+          style="display:inline-flex;align-items:center;gap:4px;background:#eff6ff;border:1px solid #bfdbfe;color:#1e40af;padding:4px 10px;border-radius:999px;font-size:.75rem;font-weight:600;text-decoration:none;"
+          onmouseover="this.style.background='#dbeafe'" onmouseout="this.style.background='#eff6ff'">
+          📍 Ver mapa
+        </a>
+        <div style="font-size:.7rem;color:var(--gray-400);margin-top:2px;">${latNum.toFixed(4)}, ${lonNum.toFixed(4)}</div>`;
+      }
+    }
+
+    const day = r.fecha_hora.split(' ')[0];
+    const todayStr = formatDate(getGTTime());
+    const isPastDay = day !== todayStr;
+    const isOrphan = r.tipo === 'ENTRADA' && isPastDay && !conSalida.has(`${r.username}__${day}`);
+
+    let showFixBtn = false;
+    if (isOrphan) {
+      const empData   = window._adminEmpleados && window._adminEmpleados[r.username];
+      const gtNow     = getGTTime();
+      const isFriday  = gtNow.getDay() === 5;
+      const horaSal   = empData ? (isFriday ? empData.hora_salida_v : empData.hora_salida_lj) : '17:00';
+      const [sH, sM]  = (horaSal || '17:00').split(':').map(Number);
+      const minSalida = sH * 60 + sM;
+      const minActual = gtNow.getHours() * 60 + gtNow.getMinutes();
+      showFixBtn = minActual >= (minSalida - 30);
+      const [ed, em, ey] = day.split('/').map(Number);
+      const dEntry = new Date(ey, em - 1, ed);
+      const dToday = new Date(gtNow.getFullYear(), gtNow.getMonth(), gtNow.getDate());
+      if (dEntry < dToday) showFixBtn = true;
+    }
+
+    const fixBtn = showFixBtn
+      ? `<button onclick="abrirSalidaManual('${r.username}','${r.nombre}','${r.fecha_hora}')"
+           style="display:inline-flex;align-items:center;gap:4px;background:#fff7ed;border:1.5px solid #f97316;color:#c2410c;padding:4px 10px;border-radius:999px;font-size:.75rem;font-weight:600;cursor:pointer;transition:var(--transition);"
+           onmouseover="this.style.background='#fed7aa'" onmouseout="this.style.background='#fff7ed'">
+           🛠️ Registrar salida
+         </button>`
+      : '';
+
+    const justEl = r.es_manual
+      ? `<span style="font-size:.78rem;color:#166534;font-style:italic;">${(r.justificacion||'').replace('[ADMIN] ','')}</span>`
+      : `<span style="font-size:.8rem;">${r.justificacion||'<span class="text-muted">—</span>'}</span>`;
+
+    const rowBg = isOrphan
+      ? 'background:#fef2f2;border-left:3px solid #ef4444;'
+      : (r.status === 'TARDE' || r.status === 'SALIDA_ANTICIPADA')
+        ? 'background:#fff7ed;border-left:3px solid #f97316;'
+        : 'background:#ffffff;';
+
+    return `<tr style="${rowBg}">
+      <td class="font-mono" style="color:var(--gray-400)">${r.id}</td>
+      <td><strong>${r.nombre}</strong><br><span class="text-sm text-muted">${r.username}</span></td>
+      <td>${tipoEl}${fixBtn ? '<br><div style="margin-top:4px;">'+fixBtn+'</div>' : ''}</td>
+      <td>${r.fecha_hora}</td>
+      <td>${statusEl}</td>
+      <td>${difText}</td>
+      <td style="max-width:160px;white-space:normal;">${justEl}</td>
+      <td>${geoEl}</td>
+    </tr>`;
+  }).join('');
+}
+
+// Salida Manual Modal
+let _salidaManualTarget = null;
+
+function abrirSalidaManual(username, nombre, fechaHoraEntrada) {
+  _salidaManualTarget = { username, nombre };
+  const datePart = fechaHoraEntrada.split(' ')[0];
+  const parts = datePart.split('/');
+  const isoDate = `${parts[2]}-${parts[1]}-${parts[0]}`;
+  document.getElementById('salidaManualFecha').value = isoDate;
+  document.getElementById('salidaManualHora').value = '18:00';
+  document.getElementById('salidaManualMotivo').value = 'Empleado olvidó marcar salida';
+  document.getElementById('salidaManualDesc').textContent = `${nombre} — entrada del ${datePart}`;
+  document.getElementById('modalSalidaManual').classList.add('open');
+}
+
+document.getElementById('btnConfirmarSalidaManual').addEventListener('click', async () => {
+  if (!_salidaManualTarget) return;
+  const fecha  = document.getElementById('salidaManualFecha').value;
+  const hora   = document.getElementById('salidaManualHora').value;
+  const motivo = document.getElementById('salidaManualMotivo').value.trim() || 'Corrección manual por administrador';
+  if (!fecha || !hora) { toast('Completa fecha y hora', 'error'); return; }
+
+  const [y,m,d] = fecha.split('-');
+  const fechaHoraStr = `${d}/${m}/${y} ${hora}:00`;
+
+  showLoading('Registrando salida manual...');
+  try {
+    const res = await apiCall({
+      action: 'registrarSalidaManual',
+      username: _salidaManualTarget.username,
+      fecha_hora: fechaHoraStr,
+      motivo
+    });
+    hideLoading();
+    document.getElementById('modalSalidaManual').classList.remove('open');
+    if (res.success) {
+      toast(`Salida de ${_salidaManualTarget.nombre} registrada correctamente`, 'success');
+      _salidaManualTarget = null;
+      document.getElementById('btnAdminFilter').click();
+    } else {
+      toast('Error: ' + (res.error||''), 'error');
+    }
+  } catch(e) {
+    hideLoading();
+    toast('Error de conexión', 'error');
+  }
+});
+
+// Sidebar tabs
+document.querySelectorAll('.sidebar-item[data-tab]').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('.sidebar-item').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    setAdminTab(btn.dataset.tab);
+  });
+});
+
+function setAdminTab(tab) {
+  document.querySelectorAll('.admin-tab-content').forEach(t => t.classList.remove('active'));
+  document.getElementById('tab-' + tab).classList.add('active');
+}
+
+// Admin period filter
+document.getElementById('adminPeriodFilter').addEventListener('change', function() {
+  const gt = getGTTime();
+  const setRange = (d1, d2) => {
+    document.getElementById('adminDesde').value = formatDateInput(d1);
+    document.getElementById('adminHasta').value = formatDateInput(d2);
+  };
+  if (this.value === 'today') {
+    setRange(gt, gt);
+  } else if (this.value === 'yesterday') {
+    const y = new Date(gt); y.setDate(gt.getDate()-1);
+    setRange(y, y);
+  } else if (this.value === 'week') {
+    const mon = getMonday(gt);
+    const sun = new Date(mon); sun.setDate(mon.getDate()+6);
+    setRange(mon, sun);
+  } else if (this.value === 'last_week') {
+    const mon = getMonday(gt); mon.setDate(mon.getDate()-7);
+    const sun = new Date(mon); sun.setDate(mon.getDate()+6);
+    setRange(mon, sun);
+  } else if (this.value === 'month') {
+    setRange(new Date(gt.getFullYear(), gt.getMonth(), 1), new Date(gt.getFullYear(), gt.getMonth()+1, 0));
+  } else if (this.value === 'last_month') {
+    setRange(new Date(gt.getFullYear(), gt.getMonth()-1, 1), new Date(gt.getFullYear(), gt.getMonth(), 0));
+  } else {
+    document.getElementById('adminDesde').value = '';
+    document.getElementById('adminHasta').value = '';
+  }
+});
+
+// Set default "Hoy"
+(function() {
+  const gt = getGTTime();
+  document.getElementById('adminDesde').value = formatDateInput(gt);
+  document.getElementById('adminHasta').value = formatDateInput(gt);
+})();
+
+document.getElementById('btnAdminFilter').addEventListener('click', async () => {
+  const emp = document.getElementById('adminEmpFilter').value;
+  const desdeInput = document.getElementById('adminDesde').value;
+  const hastaInput = document.getElementById('adminHasta').value;
+
+  const toGT = s => { if(!s) return null; const [y,m,d]=s.split('-'); return `${d}/${m}/${y}`; };
+  const desde = toGT(desdeInput);
+  const hasta = toGT(hastaInput);
+
+  const params = { action: 'getAllAttendance' };
+  if (emp) params.username_filter = emp;
+  if (desde && hasta && desde === hasta) params.fecha = desde;
+
+  showLoading('Cargando...');
+  try {
+    const res = await apiCall(params);
+    hideLoading();
+    if (res.success) {
+      let data = res.registros;
+      if (desde || hasta) {
+        const parseReg = str => { const p=str.split(' ')[0].split('/'); return new Date(+p[2],+p[1]-1,+p[0]); };
+        const d1 = desde ? (() => { const p=desde.split('/'); return new Date(+p[2],+p[1]-1,+p[0]); })() : null;
+        const d2 = hasta ? (() => { const p=hasta.split('/'); return new Date(+p[2],+p[1]-1,+p[0]); })() : null;
+        data = data.filter(r => {
+          const d = parseReg(r.fecha_hora);
+          if (d1 && d < d1) return false;
+          if (d2 && d > d2) return false;
+          return true;
+        });
+      }
+      adminAttendanceData = data;
+      renderAdminTable(data);
+      const rangeLabel = desde && hasta && desde!==hasta ? ` · ${desde} — ${hasta}` : desde ? ` · ${desde}` : '';
+      document.getElementById('adminTableCount').textContent = `${data.length} resultado${data.length!==1?'s':''}${rangeLabel}`;
+    }
+  } catch(e) { hideLoading(); toast('Error al filtrar', 'error'); }
+});
+
+document.getElementById('btnAdminClear').addEventListener('click', () => {
+  document.getElementById('adminEmpFilter').value = '';
+  document.getElementById('adminEmpSearch').value = '';
+  document.getElementById('adminPeriodFilter').value = 'today';
+  const gtClear = getGTTime();
+  document.getElementById('adminDesde').value = formatDateInput(gtClear);
+  document.getElementById('adminHasta').value = formatDateInput(gtClear);
+  loadAdminData();
+});
+
+// Export CSV — Asistencias (con columnas de geo)
+document.getElementById('btnExportCSV').addEventListener('click', () => {
+  if (!adminAttendanceData.length) { toast('No hay datos para exportar', 'error'); return; }
+  xlsxDownload(
+    `Asistencias_${formatDate(getGTTime()).replace(/\//g,'-')}.xlsx`,
+    ['ID','Username','Nombre','Tipo','Fecha y Hora','Estado','Minutos diferencia','Justificacion','Latitud','Longitud'],
+    adminAttendanceData.map(r => [
+      r.id, r.username, r.nombre, r.tipo, r.fecha_hora, r.status,
+      r.minutos_diferencia||0, (r.justificacion||'').replace('[ADMIN] ',''),
+      r.lat||'', r.lon||''
+    ])
+  );
+});
+
+// Horas semanales filtros
+document.getElementById('horasPeriodFilter').addEventListener('change', function() {
+  const needsMesAnio = this.value === 'custom_month' || this.value.startsWith('week');
+  document.getElementById('horasMesAnioGroup').style.display = needsMesAnio ? 'flex' : 'none';
+  if (needsMesAnio) {
+    const gt = getGTTime();
+    document.getElementById('horasMesSelect').value = gt.getMonth() + 1;
+    document.getElementById('horasAnioSelect').value = gt.getFullYear();
+  }
+});
+
+document.getElementById('btnHorasFilter').addEventListener('click', async () => {
+  const emp    = document.getElementById('horasEmpFilter').value;
+  const search = document.getElementById('horasEmpSearch').value.trim().toLowerCase();
+  showLoading('Cargando horas...');
+  try {
+    const params = { action: 'getWeeklyHours' };
+    if (emp) params.username_filter = emp;
+    const res = await apiCall(params);
+    hideLoading();
+    if (res.success) {
+      const seen = {};
+      const deduped = [];
+      res.semanas.forEach(r => {
+        const key = `${r.username}__${r.semana_inicio}`;
+        if (!seen[key]) { seen[key] = true; deduped.push(r); }
+      });
+
+      const period = document.getElementById('horasPeriodFilter').value;
+      const gt = getGTTime();
+      const parseDD = str => { const p=(str||'').split('/'); return p.length===3?new Date(+p[2],+p[1]-1,+p[0]):null; };
+      let filtered = deduped;
+
+      if (period === 'this_month') {
+        filtered = deduped.filter(r => { const d=parseDD(r.semana_inicio); return d && d.getMonth()===gt.getMonth() && d.getFullYear()===gt.getFullYear(); });
+      } else if (period === 'last_month') {
+        const lm = new Date(gt.getFullYear(), gt.getMonth()-1, 1);
+        filtered = deduped.filter(r => { const d=parseDD(r.semana_inicio); return d && d.getMonth()===lm.getMonth() && d.getFullYear()===lm.getFullYear(); });
+      } else if (period === 'this_week') {
+        const mon = getMonday(gt); const sun = new Date(mon); sun.setDate(mon.getDate()+6);
+        filtered = deduped.filter(r => { const d=parseDD(r.semana_inicio); return d && d>=mon && d<=sun; });
+      } else if (period === 'last_week') {
+        const mon = getMonday(gt); mon.setDate(mon.getDate()-7);
+        const sun = new Date(mon); sun.setDate(mon.getDate()+6);
+        filtered = deduped.filter(r => { const d=parseDD(r.semana_inicio); return d && d>=mon && d<=sun; });
+      } else if (period.startsWith('week')) {
+        const weekNum = parseInt(period.replace('week',''));
+        const targetMes  = parseInt(document.getElementById('horasMesSelect').value) - 1;
+        const targetAnio = parseInt(document.getElementById('horasAnioSelect').value);
+        filtered = deduped.filter(r => {
+          const d = parseDD(r.semana_inicio);
+          if (!d || d.getMonth()!==targetMes || d.getFullYear()!==targetAnio) return false;
+          const day = d.getDate();
+          const wk = day<=7?1:day<=14?2:day<=21?3:4;
+          return wk === weekNum;
+        });
+      } else if (period === 'custom_month') {
+        const mes  = parseInt(document.getElementById('horasMesSelect').value);
+        const anio = parseInt(document.getElementById('horasAnioSelect').value);
+        filtered = deduped.filter(r => { const d=parseDD(r.semana_inicio); return d && d.getMonth()+1===mes && d.getFullYear()===anio; });
+      }
+
+      if (search) filtered = filtered.filter(r =>
+        r.nombre.toLowerCase().includes(search) || r.username.toLowerCase().includes(search)
+      );
+
+      adminHorasData = filtered;
+      renderHorasTable(filtered);
+      renderHorasMes(filtered);
+    }
+  } catch(e) { hideLoading(); }
+});
+
+document.getElementById('btnHorasClear').addEventListener('click', () => {
+  document.getElementById('horasEmpFilter').value = '';
+  document.getElementById('horasEmpSearch').value = '';
+  document.getElementById('horasTableBody').innerHTML =
+    '<tr><td colspan="5"><div class="empty-state"><div class="empty-text">Selecciona un empleado o busca todos</div></div></td></tr>';
+  document.getElementById('horasMesTableBody').innerHTML =
+    '<tr><td colspan="5"><div class="empty-state"><div class="empty-text">Primero busca los datos en la vista semanal</div></div></td></tr>';
+});
+
+let vistaHorasActiva = 'semana';
+function switchVistaHoras(vista) {
+  vistaHorasActiva = vista;
+  document.getElementById('vistaSemanual').style.display = vista === 'semana' ? 'block' : 'none';
+  document.getElementById('vistaMensual').style.display  = vista === 'mes'    ? 'block' : 'none';
+  const btnS = document.getElementById('btnVistaSemanual');
+  const btnM = document.getElementById('btnVistaMensual');
+  if (vista === 'semana') {
+    btnS.style.cssText += 'background:var(--white);color:var(--navy);box-shadow:0 1px 3px rgba(0,0,0,.1);';
+    btnM.style.cssText += 'background:transparent;color:var(--gray-500);box-shadow:none;';
+  } else {
+    btnM.style.cssText += 'background:var(--white);color:var(--navy);box-shadow:0 1px 3px rgba(0,0,0,.1);';
+    btnS.style.cssText += 'background:transparent;color:var(--gray-500);box-shadow:none;';
+  }
+}
+
+function renderHorasTable(data) {
+  const tbody = document.getElementById('horasTableBody');
+  if (!data.length) {
+    tbody.innerHTML = '<tr><td colspan="5"><div class="empty-state"><div class="empty-text">Sin datos</div></div></td></tr>';
+    return;
+  }
+  tbody.innerHTML = data.map(r => {
+    const hrs = parseFloat(r.horas_trabajadas)||0;
+    const pct = Math.min(Math.round((hrs/44)*100), 100);
+    const color = pct >= 100 ? 'var(--success)' : pct >= 60 ? 'var(--blue)' : 'var(--warn)';
+    return `<tr>
+      <td><strong>${r.nombre}</strong><br><span class="text-sm text-muted">${r.username}</span></td>
+      <td>${r.semana_inicio}</td>
+      <td>${r.semana_fin}</td>
+      <td><span class="font-mono" style="font-size:1rem;font-weight:700;color:var(--navy)">${hrs.toFixed(1)}</span> / 44 hrs</td>
+      <td style="min-width:140px;">
+        <div style="display:flex;align-items:center;gap:8px;">
+          <div style="flex:1;height:6px;background:var(--gray-100);border-radius:999px;overflow:hidden;">
+            <div style="width:${pct}%;height:100%;background:${color};border-radius:999px;"></div>
+          </div>
+          <span style="font-size:.75rem;font-weight:600;color:${color};min-width:32px;text-align:right;">${pct}%</span>
+        </div>
+      </td>
+    </tr>`;
+  }).join('');
+}
+
+function renderHorasMes(data) {
+  const tbody = document.getElementById('horasMesTableBody');
+  if (!data.length) {
+    tbody.innerHTML = '<tr><td colspan="5"><div class="empty-state"><div class="empty-text">Sin datos</div></div></td></tr>';
+    return;
+  }
+  const monthNames = ['','Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
+  const groups = {};
+  data.forEach(r => {
+    const parts = r.semana_inicio.split('/');
+    if (parts.length < 3) return;
+    const mes = parseInt(parts[1]);
+    const anio = parseInt(parts[2]);
+    const key = `${r.username}__${anio}__${mes}`;
+    if (!groups[key]) groups[key] = { nombre: r.nombre, username: r.username, mes, anio, horas: 0 };
+    groups[key].horas += parseFloat(r.horas_trabajadas)||0;
+  });
+
+  const rows = Object.values(groups).sort((a,b) => {
+    if (a.anio !== b.anio) return b.anio - a.anio;
+    if (a.mes  !== b.mes)  return b.mes  - a.mes;
+    return a.nombre.localeCompare(b.nombre, 'es');
+  });
+
+  const META_MES = 176;
+  tbody.innerHTML = rows.map(r => {
+    const hrs = r.horas;
+    const pct = Math.min(Math.round((hrs / META_MES) * 100), 100);
+    const color = pct >= 100 ? 'var(--success)' : pct >= 60 ? 'var(--blue)' : 'var(--warn)';
+    return `<tr>
+      <td><strong>${r.nombre}</strong><br><span class="text-sm text-muted">${r.username}</span></td>
+      <td><span style="font-weight:600;color:var(--gray-700)">${monthNames[r.mes]} ${r.anio}</span></td>
+      <td><span class="font-mono" style="font-size:1rem;font-weight:700;color:var(--navy)">${hrs.toFixed(1)}</span> hrs</td>
+      <td style="color:var(--gray-500);font-size:.875rem;">${META_MES} hrs</td>
+      <td style="min-width:140px;">
+        <div style="display:flex;align-items:center;gap:8px;">
+          <div style="flex:1;height:6px;background:var(--gray-100);border-radius:999px;overflow:hidden;">
+            <div style="width:${pct}%;height:100%;background:${color};border-radius:999px;"></div>
+          </div>
+          <span style="font-size:.75rem;font-weight:600;color:${color};min-width:32px;text-align:right;">${pct}%</span>
+        </div>
+      </td>
+    </tr>`;
+  }).join('');
+}
+
+document.getElementById('btnExportHoras').addEventListener('click', () => {
+  if (!adminHorasData.length) { toast('No hay datos para exportar', 'error'); return; }
+  const monthNames = ['','Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
+  let headers, rows;
+  if (vistaHorasActiva === 'semana') {
+    headers = ['Username','Nombre','Semana inicio','Semana fin','Horas trabajadas'];
+    rows = adminHorasData.map(r => [r.username, r.nombre, r.semana_inicio, r.semana_fin, (parseFloat(r.horas_trabajadas)||0).toFixed(2)]);
+  } else {
+    headers = ['Username','Nombre','Mes','Año','Horas acumuladas'];
+    const groups = {};
+    adminHorasData.forEach(r => {
+      const parts = r.semana_inicio.split('/');
+      if (parts.length < 3) return;
+      const mes = parseInt(parts[1]), anio = parseInt(parts[2]);
+      const key = `${r.username}__${anio}__${mes}`;
+      if (!groups[key]) groups[key] = { nombre: r.nombre, username: r.username, mes, anio, horasRaw: 0 };
+      groups[key].horasRaw += parseFloat(r.horas_trabajadas) || 0;
+    });
+    rows = Object.values(groups).map(r => [r.username, r.nombre, monthNames[r.mes], r.anio, r.horasRaw.toFixed(2)]);
+  }
+  xlsxDownload(`Horas_COMCESA_${formatDate(getGTTime()).replace(/\//g,'-')}.xlsx`, headers, rows);
+});
+
+// Agregar empleado
+document.getElementById('btnAddEmployee').addEventListener('click', async () => {
+  const nombre   = document.getElementById('newNombre').value.trim();
+  const username = document.getElementById('newUsername').value.trim().toLowerCase();
+  const correo   = document.getElementById('newCorreo').value.trim();
+  const entrada  = document.getElementById('newHoraEntrada').value.trim();
+  const salidaLJ = document.getElementById('newHoraSalidaLJ').value.trim();
+  const salidaV  = document.getElementById('newHoraSalidaV').value.trim();
+
+  if (!nombre || !username) { toast('Nombre y username son obligatorios', 'error'); return; }
+
+  showLoading('Agregando empleado...');
+  try {
+    const res = await apiCall({ action: 'addEmployee', username, nombre, correo, hora_entrada: entrada, hora_salida_lj: salidaLJ, hora_salida_v: salidaV });
+    hideLoading();
+    if (res.success) {
+      toast(`${nombre} agregado correctamente`, 'success');
+      document.getElementById('newNombre').value = '';
+      document.getElementById('newUsername').value = '';
+      document.getElementById('newCorreo').value = '';
+      await loadEmpList();
+      await loadAdminEmployeeFilters();
+    } else {
+      toast(res.error || 'Error al agregar', 'error');
+    }
+  } catch(e) { hideLoading(); toast('Error de conexión', 'error'); }
+});
+
+async function loadEmpList() {
+  try {
+    const res = await apiCall({ action: 'getEmployeeList' });
+    if (!res.success) return;
+    const tbody = document.getElementById('empListBody');
+    const emps = res.empleados.filter(e => !e.es_admin)
+      .sort((a, b) => a.nombre.localeCompare(b.nombre, 'es'));
+    if (!emps.length) { tbody.innerHTML = '<tr><td colspan="7"><div class="empty-state">Sin empleados</div></td></tr>'; return; }
+    tbody.innerHTML = emps.map((e,i) => `<tr>
+      <td class="font-mono text-muted">${i+1}</td>
+      <td><strong>${e.nombre}</strong></td>
+      <td><span class="font-mono" style="font-size:.85rem;">${e.username}</span></td>
+      <td>${e.hora_entrada||'—'}</td>
+      <td>${e.hora_salida_lj||'—'}</td>
+      <td>${e.hora_salida_v||'—'}</td>
+      <td>${e.totp_secret ? '<span class="badge badge-success">✓ Activo</span>' : '<span class="badge badge-warn">Pendiente</span>'}</td>
+    </tr>`).join('');
+  } catch(e) {}
+}
+
+// Admin logout
+document.getElementById('btnAdminLogout').addEventListener('click', () => {
+  currentEmployee = null;
+  document.getElementById('loginUsername').value = '';
+  showScreen('screen-login');
+});
+</script>
+</body>
+</html>
