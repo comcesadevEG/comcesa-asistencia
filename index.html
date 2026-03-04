@@ -534,13 +534,131 @@
     margin-bottom: 16px;
   }
 
-  @media(max-width:640px){
-    .action-grid { grid-template-columns: 1fr; }
-    .stats-grid  { grid-template-columns: 1fr 1fr; }
-    .form-grid   { grid-template-columns: 1fr; }
+
+  /* ─── BOTTOM NAV (móvil empleado) ────────────────────────── */
+  .bottom-nav {
+    display: none;
+    position: fixed; bottom: 0; left: 0; right: 0; z-index: 200;
+    background: var(--navy);
+    border-top: 1px solid rgba(255,255,255,.1);
+    padding: 8px 0 env(safe-area-inset-bottom, 8px);
+    box-shadow: 0 -4px 20px rgba(0,0,0,.25);
+  }
+  .bottom-nav-inner {
+    display: flex; justify-content: space-around; align-items: center;
+  }
+  .bottom-nav-item {
+    display: flex; flex-direction: column; align-items: center; gap: 3px;
+    background: none; border: none; cursor: pointer; padding: 6px 16px;
+    color: rgba(255,255,255,.45); font-family: inherit; font-size: .65rem;
+    font-weight: 600; text-transform: uppercase; letter-spacing: .4px;
+    transition: var(--transition); border-radius: 10px; min-width: 60px;
+  }
+  .bottom-nav-item svg { transition: var(--transition); }
+  .bottom-nav-item.active { color: var(--accent); }
+  .bottom-nav-item.active svg { stroke: var(--accent); }
+  .bottom-nav-item:hover { color: rgba(255,255,255,.8); }
+
+  /* ─── TABLET (641px – 1024px) ────────────────────────────── */
+  @media(max-width:1024px) and (min-width:641px) {
+    .emp-sidebar  { width: 64px; padding: 16px 0; }
+    .emp-sidebar-label { display: none; }
+    .emp-sidebar-item  { justify-content: center; padding: 12px 0; border-radius: 0; }
+    .emp-sidebar-item span, .emp-sidebar-item:not([data-emp-tab]) { display: none; }
+    .emp-sidebar-item svg { width: 20px; height: 20px; }
+    /* Hide text labels in sidebar on tablet */
+    .emp-sidebar-item { font-size: 0; gap: 0; }
+    .emp-sidebar-item svg { font-size: initial; }
+    .emp-main { padding: 20px; }
+    .admin-sidebar { width: 64px; }
+    .sidebar-label { display: none; }
+    .sidebar-item  { justify-content: center; padding: 12px 0; font-size: 0; gap: 0; }
+    .sidebar-item .sidebar-icon { font-size: 1.2rem; }
+    .admin-main { padding: 20px; }
+    .stats-grid { grid-template-columns: 1fr 1fr; }
+    .clock-time { font-size: 2rem; }
+    .action-grid { grid-template-columns: 1fr 1fr; gap: 12px; }
+    .horas-resumen-grid { grid-template-columns: repeat(3,1fr); }
+  }
+
+  /* ─── MÓVIL (≤ 640px) ────────────────────────────────────── */
+  @media(max-width:640px) {
+    /* Layout general */
+    .emp-sidebar   { display: none; }
     .admin-sidebar { display: none; }
+    .bottom-nav    { display: block; }
+
+    /* Espacio para bottom nav */
+    .emp-main   { padding: 16px; padding-bottom: 80px; }
+    .admin-main { padding: 16px; padding-bottom: 24px; }
+
+    /* Header compacto */
+    .app-header { padding: 0 14px; height: 56px; }
+    .app-header-logo img { height: 26px; }
+    .user-name  { display: none; }
+    .user-badge { padding: 5px 10px 5px 5px; gap: 7px; }
+    .btn-logout { padding: 6px 10px; font-size: .75rem; }
+    .btn-logout svg { display: none; }
+
+    /* Login card */
+    .login-card { padding: 32px 24px; }
+    .totp-card  { padding: 28px 20px; }
+
+    /* Clock widget */
+    .clock-widget { padding: 20px; flex-direction: column; align-items: flex-start; gap: 12px; }
+    .clock-time   { font-size: 2.2rem; }
+    .schedule-info { text-align: left; }
+
+    /* Week card */
+    .week-card { padding: 16px; }
+    .hours-value { font-size: 1.4rem; }
+
+    /* Action grid — columna única */
+    .action-grid { grid-template-columns: 1fr; gap: 12px; }
+    .action-card { padding: 20px; }
+    .action-card-title { font-size: .95rem; }
+
+    /* Stats */
+    .stats-grid { grid-template-columns: 1fr 1fr; gap: 10px; }
+    .stat-value { font-size: 1.4rem; }
+
+    /* Forms */
+    .form-grid { grid-template-columns: 1fr; }
     .filter-row { flex-direction: column; }
-    .horas-resumen-grid { grid-template-columns: 1fr; }
+
+    /* Horas resumen */
+    .horas-resumen-grid { grid-template-columns: 1fr; gap: 10px; }
+
+    /* Tables scroll horizontal */
+    .table-card { border-radius: var(--radius); }
+    .data-table th, .data-table td { padding: 10px 12px; font-size: .8rem; }
+
+    /* Modals */
+    .modal { padding: 24px 20px; }
+
+    /* History items */
+    .history-item { padding: 12px 14px; gap: 10px; }
+
+    /* Section titles */
+    .admin-page-title { font-size: 1.2rem; }
+    .section-title    { font-size: 1rem; }
+
+    /* Filtros panel horas */
+    .horas-filtros-panel { padding: 12px 14px; }
+
+    /* Card form */
+    .card-form { padding: 18px; }
+
+    /* emp-layout sin sidebar */
+    .emp-layout { min-height: calc(100vh - 56px); }
+  }
+
+  /* ─── MUY PEQUEÑO (≤ 360px) ──────────────────────────────── */
+  @media(max-width:360px) {
+    .clock-time { font-size: 1.8rem; }
+    .action-card-icon-wrap { width: 42px; height: 42px; }
+    .stats-grid { grid-template-columns: 1fr; }
+    .login-card { padding: 24px 16px; }
   }
 </style>
 </head>
@@ -888,6 +1006,24 @@
 
     </main>
   </div>
+
+  <!-- BOTTOM NAV — solo visible en móvil -->
+  <nav class="bottom-nav" id="empBottomNav">
+    <div class="bottom-nav-inner">
+      <button class="bottom-nav-item active" data-emp-tab="inicio" id="bnav-inicio">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>
+        Inicio
+      </button>
+      <button class="bottom-nav-item" data-emp-tab="historial" id="bnav-historial">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/></svg>
+        Historial
+      </button>
+      <button class="bottom-nav-item" data-emp-tab="horas" id="bnav-horas">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>
+        Mis horas
+      </button>
+    </div>
+  </nav>
 </div>
 
 <!-- SCREEN 5: ADMIN DASHBOARD -->
@@ -1655,17 +1791,29 @@ async function loadWeeklyHours() {
   } catch(e) { console.error(e); }
 }
 
+// Employee tab switcher — compartido por sidebar y bottom nav
+async function switchEmpTab(tab) {
+  document.querySelectorAll('.emp-sidebar-item').forEach(b => b.classList.remove('active'));
+  document.querySelectorAll('.emp-sidebar-item[data-emp-tab="' + tab + '"]').forEach(b => b.classList.add('active'));
+  document.querySelectorAll('.bottom-nav-item').forEach(b => b.classList.remove('active'));
+  const bnavBtn = document.getElementById('bnav-' + tab);
+  if (bnavBtn) bnavBtn.classList.add('active');
+  document.querySelectorAll('.emp-tab-content').forEach(t => t.classList.remove('active'));
+  document.getElementById('emp-tab-' + tab).classList.add('active');
+  if (tab === 'historial') { initEmpHistorial(); await loadFullHistory(); }
+  if (tab === 'horas')     await loadEmpHoras();
+  // Scroll al top en móvil al cambiar tab
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+
 // Employee sidebar tabs
 document.querySelectorAll('.emp-sidebar-item[data-emp-tab]').forEach(btn => {
-  btn.addEventListener('click', async () => {
-    document.querySelectorAll('.emp-sidebar-item').forEach(b => b.classList.remove('active'));
-    btn.classList.add('active');
-    const tab = btn.dataset.empTab;
-    document.querySelectorAll('.emp-tab-content').forEach(t => t.classList.remove('active'));
-    document.getElementById('emp-tab-' + tab).classList.add('active');
-    if (tab === 'historial') { initEmpHistorial(); await loadFullHistory(); }
-    if (tab === 'horas')     await loadEmpHoras();
-  });
+  btn.addEventListener('click', () => switchEmpTab(btn.dataset.empTab));
+});
+
+// Bottom nav tabs
+document.querySelectorAll('.bottom-nav-item[data-emp-tab]').forEach(btn => {
+  btn.addEventListener('click', () => switchEmpTab(btn.dataset.empTab));
 });
 
 let empHistorialInited = false;
