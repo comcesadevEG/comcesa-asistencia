@@ -2372,6 +2372,7 @@ document.getElementById('btnEntrada').addEventListener('click', async () => {
   _entradaLock = true;
   const btnE = document.getElementById('btnEntrada');
   btnE.disabled = true; btnE.style.opacity = '0.5'; btnE.style.cursor = 'not-allowed';
+  showLoading('Registrando entrada...'); 
   try {
     await handleAttendance('entrada');
   } finally {
@@ -2385,6 +2386,7 @@ document.getElementById('btnEntrada').addEventListener('click', async () => {
 document.getElementById('btnSalida').addEventListener('click', async () => {
   if (_salidaLock) { toast('Ya registraste tu salida. Espera antes de intentar de nuevo.', 'error'); return; }
   _salidaLock = true;
+  showLoading('Registrando salida...'); 
   await handleAttendance('salida');
   setTimeout(() => _salidaLock = false, 60000);
 });
