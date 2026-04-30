@@ -1801,9 +1801,17 @@ function actualizarEstadoBotones(registros) {
     btnE.title = '';
   }
 
-  if (tieneSalida && !_salidaLock) {
+  if (tieneSalida) {
+    btnS.disabled = true;
+    btnS.style.opacity = '0.45';
+    btnS.style.cursor  = 'not-allowed';
+    btnS.title = 'Ya registraste tu salida hoy';
     _salidaLock = true;
-    setTimeout(() => { _salidaLock = false; }, 60000);
+  } else {
+    btnS.disabled = false;
+    btnS.style.opacity = '';
+    btnS.style.cursor  = '';
+    btnS.title = '';
   }
 }
 
