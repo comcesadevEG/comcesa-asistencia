@@ -2299,6 +2299,7 @@ async function handleAttendance(tipo) {
       document.getElementById('tardanzaInfo').textContent =
         `Estás llegando ${formatMinutes(dif)} tarde (hora programada: ${emp.hora_entrada})`;
       document.getElementById('tardanzaJustif').value = '';
+      hideLoading();
       document.getElementById('modalTardanza').classList.add('open');
       return;
     }
@@ -2309,6 +2310,7 @@ async function handleAttendance(tipo) {
       document.getElementById('salidaInfo').textContent =
         `Estás saliendo ${formatMinutes(dif)} antes (hora programada: ${salida})`;
       document.getElementById('salidaJustif').value = '';
+      hideLoading();
       document.getElementById('modalSalidaAnticipada').classList.add('open');
       return;
     }
